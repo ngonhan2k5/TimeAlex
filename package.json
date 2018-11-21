@@ -1,0 +1,13 @@
+{
+  "name": "time-alexa",
+  "version": "1.0.0",
+  "description": "My First Discord Bot",
+  "main": "bot.js",
+  "author": "Ngonhan2k5",
+  "dependencies": {
+    "discord.io": "https://github.com/woor/discord.io/tarball/gateway_v6",
+    "moment": "^2.22.2",
+    "nedb": "^1.8.0",
+    "winston": "^3.1.0"
+  }
+}
