@@ -62,9 +62,9 @@ bot.on('message', function (user, userID, channelID, message, evt) {
        var args = message.split(' ');
        var cmd = args[1];
        args = args.splice(2);
-       timealex.route(cmd, args, userID, user, send)
+       timealex.route(cmd, {userID, user, send}, args)
      }else if (userID != '509269359231893516'){
-       timealex.route('time', [message], userID, user, send)
+       timealex.route('time', {userID, user, send} , [message] )
      }
 
 });

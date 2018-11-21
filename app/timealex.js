@@ -9,14 +9,14 @@ const timeAlex = {
     return (new Date()).toString()
   },
   // @cnn reg +7
-  reg : function (tz, userID, user, send){
-    console.log(arguments)
+  reg : function (data, tz){
+    var {userID, user, send} = data;
 
     if (isNaN(tz)) return
 
     var newData = { _id: userID, tz: tz }
     db.insert(newData, function (err, newDoc) {   // Callback is optional
-      console.log("Reg error", err,err.errorType)
+      console.log("Reg error", err, err && err.errorType)
       if (!err)
         send(user + ' has registered timezone UTC'+ tz);
       else if (err.errorType == 'uniqueViolated'){
@@ -36,25 +36,47 @@ const timeAlex = {
       // newDoc has no key called notToBeSaved since its value was undefined
     });
   }, // end reg
+  show : function (data, tz){
+    var {userID, user, send} = data;
+    console.log(arguments)
+
+    if (isNaN(tz)) return
+
+    var query = { _id: userID}
+    db.find(query, function (err, docs) {   // Callback is optional
+      console.log("Found: ", docs)
+      if (!err && docs && docs.lenght > 0){
+        var tz = docs.pop().tz
+        send(user + ' has registered UTC'+ tz + ' timezone');
+     }else{
+        send('Timezone lookup failed')
+      }
+
+      // newDoc is the newly inserted document, including its _id
+      // newDoc has no key called notToBeSaved since its value was undefined
+    });
+  }, // end reg
   //
-  time : function (message, userID, user, send){
+  time : function (data, message){
     //console.log(arguments)
+    var {userID, user, send} = data;
     var items = res.process(message);
     var msg = []
     for (const item of items) {
-      msg.push('\"' + item.key + '\" ('+ item.value.utc().format('ll LT UTC') + ')')
+      msg.push('\"' + item.key + '\" meaning ['+ item.value.utc().format('ll LT') + '] in UTC')
     }
-    send(user + ' has mention about: '+  msg.join(', '))
+    if (msg.length)
+      send(data.user + ' has mention '+  msg.join(' and '))
   }
 
 }
 //(cmd, args, userID, user, send)
-const route = function(action, data, userID, user, send){
-  console.log(999999, arguments)
-  data.push(userID)
-  data.push(user)
-  data.push(send)
-  return timeAlex[action] && timeAlex[action].apply(timeAlex, data);
+const route = function(action, data, args){
+  // console.log(999999, arguments)
+  // data.push(userID)
+  // data.push(user)
+  // data.push(send)
+  return timeAlex[action] && timeAlex[action].apply(timeAlex, [data, ...args]);
 }
 
 
