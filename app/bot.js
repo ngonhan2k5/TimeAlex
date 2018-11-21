@@ -1,7 +1,7 @@
 var Discord = require('discord.io');
 var logger = require('winston');
 var auth = require('../db/auth.json');
-var timealex = require('./timealex')
+var {route} = require('./route')
 // Configure logger settings
 logger.remove(logger.transports.Console);
 logger.add(new logger.transports.Console, {
@@ -22,9 +22,9 @@ bot.on('ready', function (evt) {
 bot.on('message', function (user, userID, channelID, message, evt) {
     // Our bot needs to know if it will execute a command
     // It will listen for messages that will start with `!`
-    var send = function (msg){
+    var send = function (msg, chID=channelID){
       bot.sendMessage({
-          to: channelID,
+          to: chID,
           message: msg
       });
     }
@@ -57,14 +57,24 @@ bot.on('message', function (user, userID, channelID, message, evt) {
     //         // Just add any case commands if you want to..
     //      }
     //  }
-     //<@509269359231893516> ddd
-     if (message.startsWith('<@509269359231893516>')) {
-       var args = message.split(' ');
-       var cmd = args[1];
-       args = args.splice(2);
-       timealex.route(cmd, {userID, user, send}, args)
-     }else if (userID != '509269359231893516'){
-       timealex.route('time', {userID, user, send} , [message] )
+    // console.log(89899,evt.d.guild_id)
+    // Is direct message
+    var isDM = !evt.d.guild_id;
+     //<@509269359231893516> reg +7 msg on
+     if (message.startsWith('<@509269359231893516>')) { //only msg mention @TimeAlexa
+        var args = message.split(' ');
+        var cmd = args[1];
+        args = args.splice(2);
+        route(cmd, {userID, user, send, isDM}, args)
+      
+       //reg +7 msg on
+      }else if (!evt.d.guild_id){ // Direct Message to bot,  DM chat have no guid_id
+        var args = message.split(' ');
+        var cmd = args[0];
+        args = args.splice(1);
+        route(cmd, {userID, user, send, isDM}, args)
+     }else if (userID != '509269359231893516'){ // avoid message send by this bot
+       route('time', {userID, user, send, evt} , [message] )
      }
 
 });

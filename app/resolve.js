@@ -1,24 +1,41 @@
 var moment = require('moment');
 // console.log(moment().format());
 var dic = {
-    ampm: {reg:/(?:\s)*(1?\d)\s*(am|pm)(?:\s)*/g, moment:'hh a'} //12-11am,12-11pm
+    ampm: {reg:/(?:\s)*(1?\d)\s*(am|pm)(?:\s)*/g, format:'hh a'} //12-11am,12-11pm
   },
   resolve = {
     ampm: function (match, key){
       match = match.splice(1)
       console.log(888888, match.join(' '), key)
 
-      return moment(match.join(' '), dic[key].moment)
+      return moment(match.join(' '), dic[key].format)
     }
+  },
+  abbreviation = {
+    tomorrow: ['2MORO','TMR', 'TMRW'],
+    yesterday:['YSTD','YDA','YTD', 'YDAY'],
+    today: ['2DA', '2DAY', '2D', 'TDY']
+  },
+  abbrGen = function(abbreviation){
+    var ret = {}
+    for (var key in abbreviation) {
+      if (abbreviation.hasOwnProperty(key)) {
+        var item = abbreviation[key]
+        for (var i in item) {
+          ret[item[i]] = key;
+        }
+      }
+    }
+    return ret;
   }
-
-var fName = function(arg)
-{
-   var myName = arg.callee.toString();
-   myName = myName.substr('function '.length);
-   myName = myName.substr(0, myName.indexOf('('));
-   return myName;
-}
+console.log(abbrGen(abbreviation));
+// var fName = function(arg)
+// {
+//    var myName = arg.callee.toString();
+//    myName = myName.substr('function '.length);
+//    myName = myName.substr(0, myName.indexOf('('));
+//    return myName;
+// }
 
 module.exports = {
 
