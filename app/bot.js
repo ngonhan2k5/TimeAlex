@@ -2,6 +2,10 @@ var Discord = require('discord.io');
 var logger = require('winston');
 var auth = require('../db/auth.json');
 var {route} = require('./route')
+
+var moment = require('moment-timezone');
+moment().tz("America/Los_Angeles").format();
+
 // Configure logger settings
 logger.remove(logger.transports.Console);
 logger.add(new logger.transports.Console, {
