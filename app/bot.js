@@ -1,10 +1,9 @@
+//https://discordapp.com/oauth2/authorize?client_id=509269359231893516&scope=bot&permissions=3072
+
 var Discord = require('discord.io');
 var logger = require('winston');
 var auth = require('../db/auth.json');
 var {route} = require('./route')
-
-var moment = require('moment-timezone');
-moment().tz("America/Los_Angeles").format();
 
 // Configure logger settings
 logger.remove(logger.transports.Console);
@@ -54,7 +53,7 @@ bot.on('message', function (user, userID, channelID, message, evt) {
     route('time', {userID, user, send, evt}, [message])
   }else if (message.startsWith('!help')) { //msg mention @TimeAlexa
     route('help', {send, isDM}, [])
-    //reg +7 msg on
+    //reg Los_Angeles msg on
   }else if (!evt.d.guild_id){ // Direct Message to bot,  DM chat have no guid_id
     var args = message.split(' ');
     var cmd = args[0];
