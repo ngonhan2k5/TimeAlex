@@ -77,6 +77,7 @@ const timeAlex = {
     var {userID, user, send, evt:{d:{mentions}} } = data;
     console.log(121212, mentions)
     var items = res.process(message);
+    //console.log(items); return
 
     utils.userTz(userID).then(function(tz){
       console.log(343434, userID, fromUserTz)
@@ -233,7 +234,13 @@ var utils = {
         value: "```@TimeAlexa now [@mention_user|timezone_search]```**wo. @mention_user**: _Display current time with your registerd timezone_\r\nExample: ` @TimeAlexa now `\r\n"+
                "\r\n**with @mention_user**: *will show current time in mentioned user's timezone (if he registed)*\r\nExample: ` @TimeAlexa now @username `\r\n" +
                "\r\n**with timezone_search**: *will show current time in found first timezone*\r\nExample: ` @TimeAlexa now los `"
+      },
+      {
+        name: "\r\nConsiderated time - Supported",
+        value: "`2 am` `5pm`\r\n"+
+               "`2:30am` `12:03 pm`\r\n"
       }
+
       ],
       timestamp: new Date(),
       footer: {
