@@ -19,12 +19,12 @@ const timeAlex = {
 
     if (!tz) {
       if (isDM)
-      send('Syntax:\r\n `reg -12..+12 [msg on|off]`\r\n `Ex: reg -7 msg on`')
+      send('Syntax:\r\n `reg {timezone} [msg on|off]`\r\nEx:\r\n`reg -7 msg on`')
       else
-      return send('Syntax:\r\n `@TimeAlexa reg -12..+12 [msg on|off]`\r\n `Ex: @TimeAlexa reg -7 msg on`'.replace(isDM?'@TimeAlexa ':'',''))
+      return send('Syntax:\r\n `@TimeAlexa reg {timezone} [msg on|off]`\r\nEx:\r\n` @TimeAlexa UTC -7 msg on`'.replace(isDM?'@TimeAlexa ':'',''))
 
     }else if (!moment.tz.zone(tz)){
-      return send('Timezone name wrong\r\n To find right timezone name, use `@TimeAlexa find abc`\r\n `Ex: @TimeAlexa find los`'.replace(isDM?'@TimeAlexa ':'',''))
+      return send('Timezone name wrong\r\n To find right timezone name, use `@TimeAlexa find abc`\r\nEx:\r\n` @TimeAlexa find los`'.replace(isDM?'@TimeAlexa ':'',''))
     }
 
     var newData = { _id: userID, tz: tz},
@@ -55,7 +55,7 @@ const timeAlex = {
   }, // end reg
   info : function (data){
     var {userID, user, send, isDM} = data;
-    console.log(arguments)
+    console.log('Info', arguments)
 
     var query = { _id: userID}
     db.find(query, function (err, docs) {   // Callback is optional
@@ -64,7 +64,7 @@ const timeAlex = {
         var {tz, dmsg} = docs.pop()
         send((isDM?'You':user) + ' has **'+ tz + '** timezone and **Direct Message ' + (dmsg?'opt-in':'opt-out')+ "** with me");
       }else{
-        send('Your setting not found. Please register your setting using:\r\n `@TimeAlexa reg {timezone} [msg on|off]`\r\n `Ex: @TimeAlexa reg America/New_York msg on`')
+        send('Your setting not found. Please register your setting with:```@TimeAlexa reg {timezone} [msg on|off]```\r\nExample: find your tz then use it to register```@TimeAlexa find york //should return America/New_York\r\n@TimeAlexa reg America/New_York msg on``` '.replace(isDM?'@TimeAlexa ':'',''))
       }
 
     });
@@ -79,13 +79,13 @@ const timeAlex = {
     utils.userTz(userID).then(function(tz){
       console.log(343434, userID, fromUserTz)
       var msg = []
-      var fromUserTz = tz.tz
+      var fromUserTz = tz && tz.tz
       // answer to channel
       for (const item of items) {
-        msg.push('\"**' + item.key + '**\" is **'+ utils.tzConvert(item.data, fromUserTz) + ' in UTC**')
+        msg.push('\"**' + item.key + '**\" is **'+ utils.tzConvert(item.data, fromUserTz) + ' in UTC time**')
       }
       if (msg.length)
-      send(data.user + ' has mention '+  msg.join(' and '))
+      send(data.user + ' has talked about '+  msg.join(' and '))
 
       // PM to mentioned users
       for (const muser of mentions) {
@@ -95,32 +95,84 @@ const timeAlex = {
           if (!tz || !tz.dmsg) return
 
           var msg = [],
-          toUserTz = tz.tz
+          toUserTz = tz && tz.tz
 
           for (const item of items) {
-            msg.push('\"**' + item.key + '**\" is **'+ utils.tzConvert(item.data, fromUserTz, toUserTz) + ' in your TimeZone**')
+            msg.push('\"**' + item.key + '**\" is **'+ utils.tzConvert(item.data, fromUserTz, toUserTz) + '** in your **'+toUserTz+'** time')
           }
           if (msg.length)
-            send(data.user + ' has mention (in <#514297100566265869>):\r\n'+  msg.join(' and\r\n'), muser.id)
+            send(data.user + ' has talked about (<#514297100566265869>):\r\n'+  msg.join(' and\r\n'), muser.id)
         })
       }
     })
   },
-  find: function(data, kw){
+  find: function(data, kw, page=1){
+    console.log(arguments)
+    
     if (!kw) return
-    var {send} = data;
-    var tzList = moment.tz.names()
-    var result = tzList.filter(function(i){return i.toUpperCase().indexOf(kw.toUpperCase()) > -1})
+    var page = isNaN(page)?1:Number.parseInt(page)
 
-    if (result.lengh> 5){
-      result = result.slice(0,5)
-      result.push('...')
+    var {send} = data;
+    var result = []
+
+    if (kw.toUpperCase()!=kw){
+      let tzList = moment.tz.names()
+      result = tzList.filter(function(i){return i.toUpperCase().indexOf(kw.toUpperCase()) > -1})
+      //result = abbrList.filter(function(item){return item[0].toUpperCase().indexOf(kw.toUpperCase()) > -1}).map(function(i){return i[0] + ' ('+ i[1] + ')'})
+    }else{// if all upcase -> search abbreviation
+      var abbrList = Object.values(moment.tz._zones).map(function(item){
+        if (item instanceof moment.tz.Zone)
+          return [item.name, item.abbrs.filter(function (value, index, self) { 
+                                                            return self.indexOf(value) === index;
+                                                        }).join(' ')]
+        else{
+          var it = item.split('|').slice(0,2)
+          return [it[0], it[1].split(' ').filter(function (value, index, self) { 
+                                                            return self.indexOf(value) === index;
+                                                        }).join(' ')] 
+        }
+      })
+      // console.log(4444444, abbrList)
+      result = abbrList.filter(function(item){return item[1].toUpperCase().indexOf(kw.toUpperCase()) > -1}).map(function(i){return '**'+i[0]+'**' + ' ('+ i[1] + ')'})
     }
+    // console.log(result)
+    var ipp = 25,
+        nextPage = page+1
+        length = result.length - (page-1)*ipp
+
+    result = result.slice(page*ipp-ipp,page*ipp)
+
+    if (length > 0){
+      if (length > ipp)
+        result.push('... ```@TimeAlexa find '+kw+' '+ nextPage +'``` to get next page')
+    }else{
+      return send('No '+ (kw.toUpperCase()!=kw?'timezone':'abbreviation') +' match your keyword')
+    }
+
     send(result.join(', '))
+
   },
+
   help: function(data){
     var {send, isDM} = data;
     utils.sendHelp(send, isDM)
+  },
+  now: function(data, arg1){
+    var {send, userID, isDM, bot} = data;
+    if (arg1){
+      var toTzUid = arg1.match(/<@(\d+)>/)
+      if (toTzUid && !isNaN(toTzUid[1])){
+        utils.userTz(toTzUid[1]).then(function(tz){
+          console.log(toTzUid[1], bot.users[toTzUid[1]].username)
+          send('<@'+userID+'>: Now is **'+moment.tz(tz&&tz.tz).format('ll LT')+ '** at **@'+ bot.users[toTzUid[1]].username +'** place')
+        })
+      }
+
+    }else{
+      utils.userTz(userID).then(function(tz){
+        send('<@'+userID+'>: Now is **'+moment.tz(tz&&tz.tz).format('ll LT')+ '** at your place')
+      })
+    }
   }
 }
 
@@ -145,23 +197,61 @@ var utils = {
     a.tz(toTz)
     return a.format('ll LT')
   },
-  sendHelp: function(send, isDM){
+  sendHelpA: function(send, isDM){
     send('Your timezone will using to Translate the **considerated time content**: \r\n \
     1. In your message to UTC+0 and send right in channel\r\n \
     2. In chat messages of others one that mentioned you and will send to you as Direct Messages \r\n \
     (only with **Direct Message option** is on)\r\n \
     **Considerated time** examples: "**3pm**", "**12am**", "**tomorrow 3pm**", "**yesterday 12am**", "**tmw 12am**" \r\n \
-    Command syntax:\r\n \
+***Commands***:\r\n \
     `@TimeAlexa time` to show current time \r\n \
     `@TimeAlexa reg {timezone} [msg on|off]` to register \r\n \
-    `@TimeAlexa info` to check your setting \r\n \
+    `@TimeAlexa reg` without arguments to check your setting \r\n \
     `@TimeAlexa find` to find timezone right name \r\n'.replace(isDM?/@TimeAlexa /g:'', ''));
+  },
+  sendHelp: function(send, isDM){
+    send({
+          color: 3447003,
+          // author: {
+          //   name: client.user.username,
+          //   icon_url: client.user.avatarURL
+          // },
+          title: "Help for TimeAlexa",
+          url: "http://google.com",
+          description: "Your timezone will using to Translate the **considerated time content**: \r\n \
+    1. In your message to UTC+0 and send right in channel\r\n \
+    2. In chat messages of others one that mentioned you and will send to you as Direct Messages \r\n \
+    (only with **Direct Message option** is on)",
+          fields: [{
+              name: "Register Setting",
+              value: "```@TimeAlexa reg {timezone} [msg on|off]```"
+            },
+            {
+              name: "Check Settings",
+              value: "```@TimeAlexa reg```Without any arguments. You can put [masked links](http://google.com) inside of rich embeds."
+            },
+            {
+              name: "Find timezone name",
+              value: "```@TimeAlexa find```"
+            }
+          ],
+          timestamp: new Date(),
+          footer: {
+            // icon_url: client.user.avatarURL,
+            text: "© TimeAlex"
+          }
+
+        })
+      },
+    abbrMap: function(){
+      Objwcmoment.tz._zones
+    }
   }
-}
+
 
 //(cmd, args, userID, user, send)
 const route = function(action, data, args){
-  // console.log(999999, arguments)
+  // console.log(999999999999, arguments)
   // data.push(userID)
   // data.push(user)
   // data.push(send)

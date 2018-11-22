@@ -13,6 +13,7 @@
     "winston": "^3.1.0"
   },
   "scripts": {
-    "start": "node app/bot.js"
+    "start": "node app/bot.js",
+    "devstart": "supervisor app\bot.js"
   }
 }

@@ -27,14 +27,21 @@ bot.on('message', function (user, userID, channelID, message, evt) {
   // Our bot needs to know if it will execute a command
   // It will listen for messages that will start with `!`
   var send = function (msg, chID=channelID){
-    bot.sendMessage({
-      to: chID,
-      message: msg
-    });
+    if (typeof msg == 'string')
+      bot.sendMessage({
+        to: chID,
+        message: msg
+      });
+    else
+      bot.sendMessage({
+        to: chID,
+        embed: msg
+      });
   }
-  // console.log(arguments, evt.d.member)
+  console.log( evt.d.member, 'Author', evt.d.author)
   // avoid message send by this bot
-  if (userID == '509269359231893516') return
+  //if (userID == '509269359231893516' ) return
+  if (evt.d.author && evt.d.author.bot) return
   // Is direct message
   var isDM = !evt.d.guild_id;
   //<@509269359231893516> reg GMT+4 msg on
@@ -42,7 +49,7 @@ bot.on('message', function (user, userID, channelID, message, evt) {
     var args = message.split(' ');
     var cmd = args[1];
     args = args.splice(2);
-    route(cmd, {userID, user, send, isDM}, args)
+    route(cmd, {userID, user, send, isDM, bot}, args)
   }else if (message.startsWith('!help')) { //msg mention @TimeAlexa
     route('help', {send, isDM}, [])
     //reg +7 msg on
@@ -50,7 +57,7 @@ bot.on('message', function (user, userID, channelID, message, evt) {
     var args = message.split(' ');
     var cmd = args[0];
     args = args.splice(1);
-    route(cmd, {userID, user, send, isDM}, args)
+    route(cmd, {userID, user, send, isDM, bot}, args)
   }else {
     route('time', {userID, user, send, evt} , [message] )
   }
