@@ -24,13 +24,17 @@ bot.on('ready', function (evt) {
 });
 
 bot.on('message', function (user, userID, channelID, message, evt) {
-  // Our bot needs to know if it will execute a command
-  // It will listen for messages that will start with `!`
+
+  if (evt.d.author && evt.d.author.bot) return
+
+  // Is direct message
+  var isDM = !evt.d.guild_id;
+
   var send = function (msg, chID=channelID){
     if (typeof msg == 'string')
       bot.sendMessage({
         to: chID,
-        message: msg
+        message: msg.replace(isDM?'@TimeAlexa ':'','')
       });
     else
       bot.sendMessage({
@@ -41,15 +45,13 @@ bot.on('message', function (user, userID, channelID, message, evt) {
   console.log( evt.d.member, 'Author', evt.d.author)
   // avoid message send by this bot
   //if (userID == '509269359231893516' ) return
-  if (evt.d.author && evt.d.author.bot) return
-  // Is direct message
-  var isDM = !evt.d.guild_id;
   //<@509269359231893516> reg GMT+4 msg on
   if (message.startsWith('<@509269359231893516>')) { //msg mention @TimeAlexa
     var args = message.split(' ');
     var cmd = args[1];
     args = args.splice(2);
-    route(cmd, {userID, user, send, isDM, bot}, args)
+    route(cmd, {userID, user, send, isDM, bot}, args)||
+    route('time', {userID, user, send, evt}, [message])
   }else if (message.startsWith('!help')) { //msg mention @TimeAlexa
     route('help', {send, isDM}, [])
     //reg +7 msg on
