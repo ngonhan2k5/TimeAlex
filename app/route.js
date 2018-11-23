@@ -183,7 +183,7 @@ const timeAlex = {
     }
   },
   run: function(data){
-    console.log(222222,arguments)
+    // console.log(222222,arguments)
     var args = [...arguments].slice(1)
     var {send, userID, isDM, bot} = data;
 
