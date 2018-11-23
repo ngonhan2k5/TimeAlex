@@ -2,9 +2,9 @@
 A Discord Bot help translate mentioned time for user across timezone
 
 TimeAlexa will check people's text content and pick up text parts that **considerated a time** in:
-      1. Your text: convert to UTC+0 and send right in channel
-      2. Others text that mentioned you: convert to your Tz and Direct Messages to you
-      (only with **Direct Message option** is on)
+  1. Your text: convert to UTC+0 and send right in channel
+  2. Others text that mentioned you: convert to your Tz and Direct Messages to you  
+ (only with **Direct Message option** is on)
       
 ## Register Setting
     @TimeAlexa reg {timezone} [msg on|off]
@@ -27,4 +27,4 @@ TimeAlexa will check people's text content and pick up text parts that **conside
     *will show current time in mentioned user's timezone (if he registed)*
     Example: ` @TimeAlexa now @username `
 * with timezone_search: *will show current time in found first timezone*
-    Example: ` @TimeAlexa now los `"
+    Example: ` @TimeAlexa now los `
