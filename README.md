@@ -15,8 +15,8 @@ TimeAlexa will check people's text content and pick up text parts that **conside
 
 ## Find Timezone Name
     @TimeAlexa find {keyword}
-* {keyword} with all upcase will take as abbreviation like PST
-* otherwise will take as timezone name like Los_Angeles or just los or Country name like Bulgari or Viet
+* {keyword} with all upcase will take as abbreviation like `PST`
+* otherwise will take as timezone name like `Los_Angeles` or just `los` or Country name like `Bulgari` or `Viet`
       
 ## Current Time
     @TimeAlexa now [@mention_user|timezone_search]
@@ -28,3 +28,7 @@ TimeAlexa will check people's text content and pick up text parts that **conside
     Example: ` @TimeAlexa now @username `
 * with timezone_search: *will show current time in found first timezone*
     Example: ` @TimeAlexa now los `
+
+## Considerated time - Supported
+*   Short hour: `2 am` `5pm`  
+*   With minutes: `2:30am` `12:03 pm`
