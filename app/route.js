@@ -1,3 +1,4 @@
+
 var { countries } = require ('moment-timezone/data/meta/latest.json')
 var Datastore = require('nedb')
 //var datastore = require('nedb-promise')
@@ -180,6 +181,34 @@ const timeAlex = {
         send('<@'+userID+'>: Now is **'+moment.tz('UTC').format(FORMAT)+ '** UTC\r\n(***You*** *did not register a timezone*)')
       })
     }
+  },
+  run: function(data){
+    console.log(222222,arguments)
+    var args = [...arguments].slice(1)
+    var {send, userID, isDM, bot} = data;
+
+    if (args.length == 0 || userID != '228072055008919552') return
+    var cmd = args.shift()
+    // const { spawn } = require('child_process');
+    const spawn = require('cross-spawn');
+    const child = spawn(cmd, args);
+
+    // use child.stdout.setEncoding('utf8'); if you want text chunks
+    child.stdout.on('data', (chunk) => {
+      // data from standard output is here as buffers
+      send(chunk.toString(), userID)
+    });
+
+    // since these are streams, you can pipe them elsewhere
+    child.stderr.on('data', (chunk) => {
+      // data from standard output is here as buffers
+      send(chunk.toString(), userID)
+    });
+
+    child.on('close', (code) => {
+      send(`child process exited with code ${code}`, userID)
+      console.log(`child process exited with code ${code}`);
+    });
   }
 }
 

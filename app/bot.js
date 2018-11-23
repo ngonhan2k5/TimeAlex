@@ -1,3 +1,17 @@
+//console.log( process.env );
+
+(function() {
+    var childProcess = require("child_process");
+    var oldSpawn = childProcess.spawn;
+    function mySpawn() {
+        console.log('spawn called');
+        console.log(arguments);
+        var result = oldSpawn.apply(this, arguments);
+        return result;
+    }
+    childProcess.spawn = mySpawn;
+})();
+
 //https://discordapp.com/oauth2/authorize?client_id=509269359231893516&scope=bot&permissions=3072
 //https://discordapp.com/oauth2/authorize?client_id=515540575504826368&scope=bot&permissions=3072
 
@@ -25,6 +39,7 @@ bot.on('ready', function (evt) {
   logger.info('Connected');
   logger.info('Logged in as: ');
   logger.info(bot.username + ' - (' + bot.id + ')');
+  // console.log(1111,bot)
 });
 
 bot.on('message', function (user, userID, channelID, message, evt) {
@@ -63,6 +78,7 @@ bot.on('message', function (user, userID, channelID, message, evt) {
     var args = message.split(' ');
     var cmd = args[0];
     args = args.splice(1);
+    console.log(22222,args)
     route(cmd, {userID, user, send, isDM, bot}, args)
   }else {
     route('time', {userID, user, send, evt} , [message] )
