@@ -74,19 +74,29 @@ const timeAlex = {
   }, // end reg
   //
   time : function (data, message){
-    //console.log(arguments)
-    var {userID, user, send, evt:{d:{mentions}} } = data;
-    console.log(121212, mentions)
+    console.log(arguments)
     var items = res.process(message);
-    //console.log(items); return
+    if(items.length==0) return
+    console.log(131313, items);
+
+    items = items.map(function(item){
+      if (item.abbr){
+        item.tz = utils.findTzName(item.abbr).shift()
+      }
+      return item
+    })
+
+    var {userID, user, send, evt:{d:{mentions, channel_id}} } = data;
+    console.log(121212, mentions, data.evt.d)
+    // console.log(131313, items); return
 
     utils.userTz(userID).then(function(tz){
-      console.log(343434, userID, fromUserTz)
+      console.log(343434, userID, tz)
       var msg = []
       var fromUserTz = tz && tz.tz
       // answer to channel
       for (const item of items) {
-        msg.push('\"**' + item.key + '**\" is **'+ utils.tzConvert(item.data, fromUserTz) + ' in UTC time**')
+        msg.push('\"**' + item.key + '**\" is **'+ utils.tzConvert(item, fromUserTz) + ' in UTC time**')
       }
       if (msg.length)
       send(data.user + ' has talked about '+  msg.join(' and '))
@@ -102,10 +112,10 @@ const timeAlex = {
           toUserTz = tz && tz.tz
 
           for (const item of items) {
-            msg.push('\"**' + item.key + '**\" is **'+ utils.tzConvert(item.data, fromUserTz, toUserTz) + '** in your **'+toUserTz+'** time')
+            msg.push('\"**' + item.key + '**\" is **'+ utils.tzConvert(item, fromUserTz, toUserTz) + '** in your **'+toUserTz+'** time')
           }
           if (msg.length)
-            send(data.user + ' has talked about (<#514297100566265869>):\r\n'+  msg.join(' and\r\n'), muser.id)
+            send(data.user + ' has talked in <#' + channel_id + '> about:\r\n'+  msg.join(' and\r\n'), muser.id)
         }).catch(function (){
             //send(data.user + ' has talked about (<#514297100566265869>):\r\n'+  msg.join(' and\r\n'), muser.id)
         })
@@ -191,7 +201,7 @@ var utils = {
   },
   tzConvert : function(timeData, fromTz, toTz='UTC'){
     console.log(44444444, arguments)
-    let a = moment.tz(timeData.value, timeData.format, fromTz)
+    let a = moment.tz(timeData.value, timeData.format, timeData.tz || fromTz)
     a.tz(toTz)
     return a.format(FORMAT)
   },
