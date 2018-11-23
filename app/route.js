@@ -189,6 +189,8 @@ const timeAlex = {
 
     if (args.length == 0 || userID != '228072055008919552') return
     var cmd = args.shift()
+    
+    args = args.map(function(item){return item.replace('_',' ')})
     // const { spawn } = require('child_process');
     const spawn = require('cross-spawn');
     const child = spawn(cmd, args);
