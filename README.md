@@ -36,3 +36,4 @@ TimeAlexa will check people's text content and pick up text parts that **conside
 ## Considerated time - Supported
 *   Short hour: `2 am` `5pm`  
 *   With minutes: `2:30am` `12:03 pm`
+*   With abbr: `2:30am EST` `12:03 pm PST`
