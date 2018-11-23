@@ -310,3 +310,5 @@ module.exports = {
   process: timeAlex,
   route:route
 }
+
+// https://discordbots.org/bot/509269359231893516
