@@ -281,8 +281,9 @@ var utils = {
       },
       {
         name: "\r\nConsiderated time - Supported",
-        value: "`2 am` `5pm`\r\n"+
-               "`2:30am` `12:03 pm`\r\n"
+        value: "`2 am` `5PM`\r\n"+
+               "`2:30am` `12:03 PM`\r\n"+
+               "`2:30am est` `12:03 PM PST`\r\n"
       }
 
       ],
