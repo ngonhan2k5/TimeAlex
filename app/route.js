@@ -1,3 +1,4 @@
+var { countries } = require ('moment-timezone/data/meta/latest.json')
 var Datastore = require('nedb')
 //var datastore = require('nedb-promise')
 var db = new Datastore({ filename: 'db/usertz.db', autoload: true });
@@ -104,7 +105,9 @@ const timeAlex = {
             msg.push('\"**' + item.key + '**\" is **'+ utils.tzConvert(item.data, fromUserTz, toUserTz) + '** in your **'+toUserTz+'** time')
           }
           if (msg.length)
-          send(data.user + ' has talked about (<#514297100566265869>):\r\n'+  msg.join(' and\r\n'), muser.id)
+            send(data.user + ' has talked about (<#514297100566265869>):\r\n'+  msg.join(' and\r\n'), muser.id)
+        }).catch(function (){
+            //send(data.user + ' has talked about (<#514297100566265869>):\r\n'+  msg.join(' and\r\n'), muser.id)
         })
       }
     })
@@ -164,7 +167,7 @@ const timeAlex = {
       utils.userTz(userID).then(function(tz){
         send('<@'+userID+'>: Now is **'+moment.tz(tz&&tz.tz).format(FORMAT)+ '** at your place')
       }).catch(function(err){
-        send('<@'+userID+'>: Now is **'+moment.tz(tz&&tz.tz).format(FORMAT)+ '** UTC\r\n(***'+ bot.users[toTzUid[1]].username +'*** *did not register a timezone*)')
+        send('<@'+userID+'>: Now is **'+moment.tz('UTC').format(FORMAT)+ '** UTC\r\n(***You*** *did not register a timezone*)')
       })
     }
   }
@@ -251,29 +254,45 @@ var utils = {
   },
   findTzName: function (kw){
     var result = []
-
     if (kw.toUpperCase()!=kw){
       let tzList = moment.tz.names()
       result = tzList.filter(function(i){return i.toUpperCase().indexOf(kw.toUpperCase()) > -1})
       //result = abbrList.filter(function(item){return item[0].toUpperCase().indexOf(kw.toUpperCase()) > -1}).map(function(i){return i[0] + ' ('+ i[1] + ')'})
+      if (result.length==0){ //try  to get by country
+        var result2 = Object.values(countries).find(function(item){
+          return item.name.toUpperCase().indexOf(kw.toUpperCase()) > -1
+        })
+        if (result2)
+          return [result2.zones[0]]
+      }
     }else{// if all upcase -> search abbreviation
+      var current = new Date().getTime()
       var abbrList = Object.values(moment.tz._zones).map(function(item){
-        if (item instanceof moment.tz.Zone)
-        return [item.name, item.abbrs.filter(function (value, index, self) {
-          return self.indexOf(value) === index;
-        }).join(' ')]
-        else{
-          var it = item.split('|').slice(0,2)
-          return [it[0], it[1].split(' ').filter(function (value, index, self) {
-            return self.indexOf(value) === index;
-          }).join(' ')]
-        }
+
+        if (typeof item == 'string')
+          item = moment.tz.unpack(item)
+
+        return [item.name, moment.tz.zone(item.name).abbr(current)]
+
+        // if (item instanceof moment.tz.Zone)
+        //   return [item.name, item.abbrs.filter(function (value, index, self) {
+        //     return self.indexOf(value) === index;
+        //   }).join(' ')]
+        // else{
+        //   var it = item.split('|').slice(0,2)
+        //   return [it[0], it[1].split(' ').filter(function (value, index, self) {
+        //     return self.indexOf(value) === index;
+        //   }).join(' ')]
+        // }
       })
-      // console.log(4444444, abbrList)
-      result = abbrList.filter(function(item){return item[1].toUpperCase().indexOf(kw.toUpperCase()) > -1}).map(function(i){return '**'+i[0]+'**' + ' ('+ i[1] + ')'})
+
+      result = abbrList.filter(function(item){return item[1].toUpperCase().indexOf(kw.toUpperCase()) > -1}).map(function(i){return i[0]})
+      console.log(4444444, result)
+
     }
     return result
-  }
+  },
+
 }
 
 
