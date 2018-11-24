@@ -1,4 +1,4 @@
-[![Discord Bots](https://discordbots.org/api/widget/status/509269359231893516.svg?noavatar=true)](https://discordbots.org/bot/509269359231893516)[![Discord Bots](https://discordbots.org/api/widget/servers/509269359231893516.svg?noavatar=true)](https://discordbots.org/bot/509269359231893516)
+[![Discord Bots](https://discordbots.org/api/widget/status/509269359231893516.svg?noavatar=true)](https://discordbots.org/bot/509269359231893516)[![Discord Bots](https://discordbots.org/api/widget/servers/509269359231893516.svg)](https://discordbots.org/bot/509269359231893516)[![Discord Bots](https://discordbots.org/api/widget/upvotes/509269359231893516.svg)](https://discordbots.org/bot/509269359231893516)
 
 # TimeAlex
 A Discord Bot help translate mentioned time for user across timezone
