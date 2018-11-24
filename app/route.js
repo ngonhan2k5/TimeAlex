@@ -182,21 +182,24 @@ const timeAlex = {
 
   },
 
-  help: function(data){
+  help: function(data, detail=false){
     var {send} = data;
-    utils.sendHelp(send)
+    return detail?utils.sendHelp(send):utils.sendHelpShort(send)
   },
   now: function(data, arg1){
     var {send, userID, isDM, bot} = data;
     if (arg1){
       var toTzUid = arg1.match(/<@(\d+)>/)
-      if (toTzUid && !isNaN(toTzUid[1])){
-        utils.userTz(toTzUid[1]).then(function(tz){
-          console.log(toTzUid[1], bot.users[toTzUid[1]].username)
-          send('<@'+userID+'>: Now is **'+moment.tz(tz&&tz.tz).format(FORMAT)+ '** at **@'+ bot.users[toTzUid[1]].username +'** place')
-        }).catch(function(err){
-          send('<@'+userID+'>: Now is **'+moment.tz(tz&&tz.tz).format(FORMAT)+ '** UTC\r\n(***'+ bot.users[toTzUid[1]].username +'*** *did not register a timezone*)')
-        })
+      if (toTzUid && !isNaN(toTzUid[1])){ // now of mentioned user
+        utils.userTz(toTzUid[1]).then(
+          function(tz){
+            console.log(toTzUid[1], bot.users[toTzUid[1]].username)
+            send('<@'+userID+'>: Now is **'+moment.tz(tz&&tz.tz).format(FORMAT)+ '** at **@'+ bot.users[toTzUid[1]].username +'** place')
+          },
+          function(er){
+            send('<@'+userID+'>: Now is **'+moment.tz('UTC').format(FORMAT)+ '** UTC\r\n(***'+ bot.users[toTzUid[1]].username +'*** *did not register a timezone*)')
+          }
+        ).catch(function(err){})
       }else if (moment.tz.zone(arg1)){ //
         send('<@'+userID+'>: Now is **'+moment.tz(arg1).format(FORMAT)+ '** in **'+ arg1 +'** timezone')
       }else{
@@ -208,11 +211,14 @@ const timeAlex = {
       }
 
     }else{ // `now` use tz of taking user
-      utils.userTz(userID).then(function(tz){
-        send('<@'+userID+'>: Now is **'+moment.tz(tz&&tz.tz).format(FORMAT)+ '** at your place')
-      }).catch(function(err){
-        send('<@'+userID+'>: Now is **'+moment.tz('UTC').format(FORMAT)+ '** UTC\r\n(***You*** *did not register a timezone*)')
-      })
+      utils.userTz(userID).then(
+        function(tz){
+          send('<@'+userID+'>: Now is **'+moment.tz(tz&&tz.tz).format(FORMAT)+ '** at your time')
+        },
+        function(er){
+          send('<@'+userID+'>: Now is **'+moment.tz('UTC').format(FORMAT)+ '** UTC\r\n(***You*** *did not register a timezone*)')
+        }).catch(function(err){
+        })
     }
   },
   run: function(data){
@@ -290,41 +296,76 @@ var utils = {
       //   icon_url: client.user.avatarURL
       // },
       title: "Help for TimeAlexa",
-      url: "http://google.com",
+      url: "https://discordbots.org/bot/509269359231893516",
       description: "TimeAlexa will check people's text content and pick up text parts that **considerated a time** in: \r\n \
       1. Your text: convert to UTC+0 and send right in channel\r\n \
       2. Others text that mentioned you: convert to your Tz and Direct Messages to you\r\n \
       (only with **Direct Message option** is on)",
-      fields: [{
-        name: "Register Setting",
-        value: "```@TimeAlexa reg {timezone} [msg on|off]```"
-      },
-      {
-        name: "Check Settings",
-        value: "```@TimeAlexa reg```_without any arguments_\r\n"
-      },
-      {
-        name: "Find Timezone Name",
-        value: "```@TimeAlexa find {keyword}```{keyword} _with all upcase will take as abbreviation like PST_\r\n*otherwise will take as timezone name like Los_Angeles or just los*\r\n\r\n"
-      },
-      {
-        name: "Current Time",
-        value: "```@TimeAlexa now [@mention_user|timezone_search]```**wo. @mention_user**: _Display current time with your registerd timezone_\r\nExample: ` @TimeAlexa now `\r\n"+
-               "\r\n**with @mention_user**: *will show current time in mentioned user's timezone (if he registed)*\r\nExample: ` @TimeAlexa now @username `\r\n" +
-               "\r\n**with timezone_search**: *will show current time in found first timezone*\r\nExample: ` @TimeAlexa now los `"
-      },
-      {
-        name: "\r\nConsiderated time - Supported",
-        value: "`2 am` `5PM`\r\n"+
-               "`2:30am` `12:03 PM`\r\n"+
-               "`2:30am est` `12:03 PM PST`\r\n"
-      }
-
+      fields: [
+        {
+          name: "Register Setting",
+          value: "```@TimeAlexa reg {timezone} [msg on|off]```"
+        },
+        {
+          name: "Check Settings",
+          value: "```@TimeAlexa reg```_without any arguments_\r\n"
+        },
+        {
+          name: "Find Timezone Name",
+          value: "```@TimeAlexa find {keyword}```{keyword} _with all upcase will take as abbreviation like PST_\r\n*otherwise will take as timezone name like Los_Angeles or just los*\r\n\r\n"
+        },
+        {
+          name: "Current Time",
+          value: "```@TimeAlexa now [@mention_user|timezone_search]```**wo. @mention_user**: _Display current time with your registerd timezone_\r\nExample: ` @TimeAlexa now `\r\n"+
+                 "\r\n**with @mention_user**: *will show current time in mentioned user's timezone (if he registed)*\r\nExample: ` @TimeAlexa now @username `\r\n" +
+                 "\r\n**with timezone_search**: *will show current time in found first timezone*\r\nExample: ` @TimeAlexa now los `"
+        },
+        {
+          name: "\r\nConsiderated time - Supported",
+          value: "`2 am` `5PM`\r\n"+
+                 "`2:30am` `12:03 PM`\r\n"+
+                 "`2:30am est` `12:03 PM PST`\r\n"
+        },
+        {
+          name: "Notes: you doesn't need @TimeAlexa in PM",
+          value: "Ex: `@TimeAlexa now` -> `now`"
+        }
       ],
       timestamp: new Date(),
       footer: {
         // icon_url: client.user.avatarURL,
-        text: "Notes: you doesn't need @TimeAlexa in PM with bot\r\n© TimeAlex"
+        text: "© TimeAlex"
+      }
+    })
+  },
+  sendHelpShort: function(send){
+    send({
+      color: 3447003,
+      // author: {
+      //   name: client.user.username,
+      //   icon_url: client.user.avatarURL
+      // },
+      title: "Help for TimeAlexa",
+      url: "https://discordbots.org/bot/509269359231893516",
+      description: "TimeAlexa translate time text in context like **2pm** **12:03 PM PST**,...",
+      fields: [
+        {
+          name: "1. Find a Timezone",
+          value: "```@TimeAlexa find {keyword}```{keyword}: `PST`, `Los_Angeles` or just `los`"
+        },
+        {
+          name: "2. Set your Timezone",
+          value: "```@TimeAlexa reg {timezone} [msg on|off]```"
+        },
+        {
+          name: "\r\n* More detail ?",
+          value: "```@TimeAlexa help more```Notes: you doesn't need @TimeAlexa in PM with bot"
+        }
+      ],
+      timestamp: new Date(),
+      footer: {
+        // icon_url: client.user.avatarURL,
+        text: "© TimeAlex"
       }
     })
   },
@@ -349,19 +390,8 @@ var utils = {
           item = moment.tz.unpack(item)
 
         return [item.name, moment.tz.zone(item.name).abbr(current)]
-
-        // if (item instanceof moment.tz.Zone)
-        //   return [item.name, item.abbrs.filter(function (value, index, self) {
-        //     return self.indexOf(value) === index;
-        //   }).join(' ')]
-        // else{
-        //   var it = item.split('|').slice(0,2)
-        //   return [it[0], it[1].split(' ').filter(function (value, index, self) {
-        //     return self.indexOf(value) === index;
-        //   }).join(' ')]
-        // }
       })
-
+      // abbreviation need exact match
       result = abbrList.filter(function(item){return item[1].toUpperCase().indexOf(kw.toUpperCase()) > -1}).map(function(i){return i[0]})
       console.log(4444444, result)
 
