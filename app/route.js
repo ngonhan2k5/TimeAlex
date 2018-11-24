@@ -1,20 +1,15 @@
-
 var { countries } = require ('moment-timezone/data/meta/latest.json')
+var cities = require ('../ref/countries.min.json')
 var Datastore = require('nedb')
-//var datastore = require('nedb-promise')
 var db = new Datastore({ filename: 'db/usertz.db', autoload: true });
-//var db = datastore({ filename: 'db/usertz.db', autoload: true });
+
 var res = require('./resolve')
 var moment = require('moment-timezone');
-const FORMAT = 'LT ll'
 
+const FORMAT = 'LT ll',
+      FORMAT_TIME = 'LT'
 const timeAlex = {
-  timeAlex: function(){
-    console.log(arguments)
-    var arg = arguments
-    return (new Date()).toString()
-  },
-  // @cnn reg +7
+  // Register
   reg : function (data, tz, pmKey, pm=null){
     console.log(666, tz, pmKey, pm)
 
@@ -53,8 +48,6 @@ const timeAlex = {
         send('Timezone register failed')
       }
 
-      // newDoc is the newly inserted document, including its _id
-      // newDoc has no key called notToBeSaved since its value was undefined
     });
   }, // end reg
   _info : function (data){
@@ -70,10 +63,9 @@ const timeAlex = {
       }else{
         send('Your setting not found. Please register your setting with:```@TimeAlexa reg {timezone} [msg on|off]```\r\nExample: find your tz then use it to register```@TimeAlexa find york //should return America/New_York\r\n@TimeAlexa reg America/New_York msg on``` ')
       }
-
     });
-  }, // end reg
-  //
+  },
+  // process message to find time text
   time : function (data, message){
     console.log(arguments)
     var items = res.process(message);
@@ -156,12 +148,13 @@ const timeAlex = {
 
   )
   },
-  find: function(data, kw, page=1){
+  find: function(data, kw, arg1, arg2){
     console.log(arguments)
 
     if (!kw) return
-    var page = isNaN(page)?1:Number.parseInt(page)
-    var result = utils.findTzName(kw)
+    var page = isNaN(arg1)?(isNaN(arg2)?1:Number.parseInt(arg2)):Number.parseInt(arg1)
+    var country = typeof arg1 == 'string'? arg1: null;
+    var result = utils.findTzName(kw, true, country)
     var {send} = data;
 
     // console.log(result)
@@ -186,7 +179,7 @@ const timeAlex = {
     var {send} = data;
     return detail?utils.sendHelp(send):utils.sendHelpShort(send)
   },
-  now: function(data, arg1){
+  now: function(data, arg1, arg2){
     var {send, userID, isDM, bot} = data;
     if (arg1){
       var toTzUid = arg1.match(/<@(\d+)>/)
@@ -203,17 +196,17 @@ const timeAlex = {
       }else if (moment.tz.zone(arg1)){ //
         send('<@'+userID+'>: Now is **'+moment.tz(arg1).format(FORMAT)+ '** in **'+ arg1 +'** timezone')
       }else{
-        var result = utils.findTzName(arg1).shift()
+        var result = utils.findTzName(arg1, true, arg2).shift()
         if (result)
           send('<@'+userID+'>: Now is **'+moment.tz(result).format(FORMAT)+ '** in **'+ result +'** timezone')
         else
           send('<@'+userID+'>: No timezone found')
       }
 
-    }else{ // `now` use tz of taking user
+    }else{ // `now` use tz of asking user
       utils.userTz(userID).then(
         function(tz){
-          send('<@'+userID+'>: Now is **'+moment.tz(tz&&tz.tz).format(FORMAT)+ '** at your time')
+          send('<@'+userID+'>: Now is **'+moment.tz(tz&&tz.tz).format(FORMAT_TIME)+ '** at your time')
         },
         function(er){
           send('<@'+userID+'>: Now is **'+moment.tz('UTC').format(FORMAT)+ '** UTC\r\n(***You*** *did not register a timezone*)')
@@ -250,7 +243,7 @@ const timeAlex = {
       send(`child process exited with code ${code}`, userID)
       console.log(`child process exited with code ${code}`);
     });
-  }
+  }, 
 }
 
 var utils = {
@@ -288,7 +281,7 @@ var utils = {
     `@TimeAlexa reg` without arguments to check your setting \r\n \
     `@TimeAlexa find` to find timezone right name \r\n');
   },
-  sendHelp: function(send){
+  sendHelp: function(send, bot){
     send({
       color: 3447003,
       // author: {
@@ -338,7 +331,7 @@ var utils = {
       }
     })
   },
-  sendHelpShort: function(send){
+  sendHelpShort: function(send, bot){
     send({
       color: 3447003,
       // author: {
@@ -369,12 +362,15 @@ var utils = {
       }
     })
   },
-  findTzName: function (kw){
+  findTzName: function (kw, searchCity=false, country){
+    console.log(555555, arguments)
     var result = []
     if (kw.toUpperCase()!=kw){
+      // find in moment zone
       let tzList = moment.tz.names()
       result = tzList.filter(function(i){return i.toUpperCase().indexOf(kw.toUpperCase()) > -1})
       //result = abbrList.filter(function(item){return item[0].toUpperCase().indexOf(kw.toUpperCase()) > -1}).map(function(i){return i[0] + ' ('+ i[1] + ')'})
+      // if no result find in country
       if (result.length==0){ //try  to get by country
         var result2 = Object.values(countries).find(function(item){
           return item.name.toUpperCase().indexOf(kw.toUpperCase()) > -1
@@ -382,6 +378,8 @@ var utils = {
         if (result2)
           return [result2.zones[0]]
       }
+      // find in cities Data
+
     }else{// if all upcase -> search abbreviation
       var current = new Date().getTime()
       var abbrList = Object.values(moment.tz._zones).map(function(item){
@@ -396,6 +394,16 @@ var utils = {
       console.log(4444444, result)
 
     }
+
+    if (result.length==0 && searchCity){
+      var cityTz = require('../ref/cities-tz.min.json')
+      result = cityTz.filter(function(item){
+        return (!country || country.toUpperCase() == item.country.toUpperCase()) && item.name.toUpperCase().indexOf(kw.toUpperCase()) > -1 && item.zones && item.zones.length
+      }).map(function(item){
+        return item.zones[0]
+      })
+    }
+
     return result
   },
 
