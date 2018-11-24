@@ -77,6 +77,7 @@ const timeAlex = {
   time : function (data, message){
     console.log(arguments)
     var items = res.process(message);
+
     if(items.length==0) return
     console.log(131313, items);
 
@@ -87,41 +88,73 @@ const timeAlex = {
       return item
     })
 
-    var {userID, user, send, evt:{d:{mentions, channel_id}} } = data;
-    console.log(121212, mentions, data.evt.d)
+    var {userID, user, send, d:{mentions, channel_id} } = data;
+    console.log(121212, mentions, data.evt)
     // console.log(131313, items); return
 
-    utils.userTz(userID).then(function(tz){
-      console.log(343434, userID, tz)
-      var msg = []
-      var fromUserTz = tz && tz.tz
-      // answer to channel
-      for (const item of items) {
-        msg.push('\"**' + item.key + '**\" is **'+ utils.tzConvert(item, fromUserTz) + ' in UTC time**')
+    utils.userTz(userID).then(
+      function(tz){
+        console.log(343434, userID, tz, mentions)
+        var msg = []
+        var fromUserTz = tz.tz
+        // answer to channel
+        for (const item of items) {
+          msg.push('\"**' + item.key + '**\" is **'+ utils.tzConvert(item, fromUserTz) + ' in UTC time**')
+        }
+
+        send(data.user + ' has talked about '+  msg.join(' and '))
+
+        // PM to mentioned users
+        if (!mentions) return
+
+        for (const muser of mentions) {
+          // check mentioned user setting option dmsg
+          utils.userTz(muser.id).then(
+            function(tz){
+
+              if (!tz.dmsg) return
+
+              var msg = [],
+              toUserTz = tz.tz
+
+              for (const item of items) {
+                msg.push('\"**' + item.key + '**\" is **'+ utils.tzConvert(item, fromUserTz, toUserTz) + '** in your **'+toUserTz+'** time')
+              }
+              if (msg.length)
+                send('**'+data.user + '** has talked in <#' + channel_id + '> about:\r\n'+  msg.join(' and\r\n'), muser.id)
+            },
+            // rejected: remind mentioned users about register a tz
+            function(er){
+              console.log('here')
+              var msg = []
+              for (const item of items) {
+                msg.push('\"**' + item.key + '**\" is **'+ utils.tzConvert(item, fromUserTz) + '** in **UTC** time')
+              }
+              if (msg.length)
+                send('**'+data.user + '** has talked in <#' + channel_id + '> about:\r\n'+  msg.join(' and\r\n') +
+                '. Please register a timezone allow me translate the time for you', muser.id)
+            }
+        ).catch(function (){
+              //send(data.user + ' has talked about (<#514297100566265869>):\r\n'+  msg.join(' and\r\n'), muser.id)
+          })
+        }
+      },
+      // rejected: talking user not register a tz
+      function(er){
+        console.log(343434, userID, er)
+        var msg = []
+        // not answer to channel just remind user regist a tz
+        for (const item of items) {
+          msg.push('\"**' + item.key.trim() + '**\"')
+        }
+
+        send('<@'+userID+'> You has talked '+  msg.join(' and ') + '. Please register a timezone to help translate your time correctly.')
+
+        // No need PM to mentioned users
       }
-      if (msg.length)
-      send(data.user + ' has talked about '+  msg.join(' and '))
+    ).catch(function (){},
 
-      // PM to mentioned users
-      for (const muser of mentions) {
-        // check mentioned user setting option dmsg
-        utils.userTz(muser.id).then(function(tz){
-
-          if (!tz || !tz.dmsg) return
-
-          var msg = [],
-          toUserTz = tz && tz.tz
-
-          for (const item of items) {
-            msg.push('\"**' + item.key + '**\" is **'+ utils.tzConvert(item, fromUserTz, toUserTz) + '** in your **'+toUserTz+'** time')
-          }
-          if (msg.length)
-            send(data.user + ' has talked in <#' + channel_id + '> about:\r\n'+  msg.join(' and\r\n'), muser.id)
-        }).catch(function (){
-            //send(data.user + ' has talked about (<#514297100566265869>):\r\n'+  msg.join(' and\r\n'), muser.id)
-        })
-      }
-    })
+  )
   },
   find: function(data, kw, page=1){
     console.log(arguments)
@@ -174,7 +207,7 @@ const timeAlex = {
           send('<@'+userID+'>: No timezone found')
       }
 
-    }else{
+    }else{ // `now` use tz of taking user
       utils.userTz(userID).then(function(tz){
         send('<@'+userID+'>: Now is **'+moment.tz(tz&&tz.tz).format(FORMAT)+ '** at your place')
       }).catch(function(err){
@@ -222,6 +255,7 @@ var utils = {
       db.findOne(query , function (err, doc) {   // Callback is optional
         console.log("Found: ", err, doc)
         if (err||!doc){
+          console.log(2222222222,err)
           reject(err)
         }else{
           resolve(doc)
