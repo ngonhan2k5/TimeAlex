@@ -1,3 +1,6 @@
+var isTest = process.env.OS == 'Windows_NT'
+const LINK = isTest?'localhost:3000':'talex.b-reserved.com'
+
 var { countries } = require ('moment-timezone/data/meta/latest.json')
 var cities = require ('../ref/countries.min.json')
 var Datastore = require('nedb')
@@ -23,7 +26,7 @@ const timeAlex = {
       //   return send('Syntax:\r\n ```@TimeAlexa reg {timezone} [msg on|off]```\r\nEx:\r\n```@TimeAlexa UTC -7 msg on```'.replace(isDM?'@TimeAlexa ':'',''))
       return this._info(data).then(()=>{},(data)=>{
         regLink(data).then((token)=>{
-          send(`Or click this link to register: http:\/\/localhost:3000/?token=${token.token}`)
+          send(`Or click this link to register: http:\/\/${LINK}/?token=${token.token}`)
           console.log(token)
         })
 
