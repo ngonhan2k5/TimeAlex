@@ -5,11 +5,11 @@
   "main": "bot.js",
   "author": "Ngonhan2k5",
   "dependencies": {
+    "cross-spawn": "^6.0.5",
     "discord.io": "https://github.com/woor/discord.io/tarball/gateway_v6",
     "moment": "^2.22.2",
     "moment-timezone": "^0.5.23",
     "nedb": "^1.8.0",
-    "nedb-promise": "^2.0.1",
     "winston": "^3.1.0"
   },
   "scripts": {

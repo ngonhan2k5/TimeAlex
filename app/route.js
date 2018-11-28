@@ -1,19 +1,15 @@
 var { countries } = require ('moment-timezone/data/meta/latest.json')
+var cities = require ('../ref/countries.min.json')
 var Datastore = require('nedb')
-//var datastore = require('nedb-promise')
 var db = new Datastore({ filename: 'db/usertz.db', autoload: true });
-//var db = datastore({ filename: 'db/usertz.db', autoload: true });
+
 var res = require('./resolve')
 var moment = require('moment-timezone');
-const FORMAT = 'LT ll'
 
+const FORMAT = 'LT ll',
+      FORMAT_TIME = 'LT'
 const timeAlex = {
-  timeAlex: function(){
-    console.log(arguments)
-    var arg = arguments
-    return (new Date()).toString()
-  },
-  // @cnn reg +7
+  // Register
   reg : function (data, tz, pmKey, pm=null){
     console.log(666, tz, pmKey, pm)
 
@@ -52,8 +48,6 @@ const timeAlex = {
         send('Timezone register failed')
       }
 
-      // newDoc is the newly inserted document, including its _id
-      // newDoc has no key called notToBeSaved since its value was undefined
     });
   }, // end reg
   _info : function (data){
@@ -69,55 +63,98 @@ const timeAlex = {
       }else{
         send('Your setting not found. Please register your setting with:```@TimeAlexa reg {timezone} [msg on|off]```\r\nExample: find your tz then use it to register```@TimeAlexa find york //should return America/New_York\r\n@TimeAlexa reg America/New_York msg on``` ')
       }
-
     });
-  }, // end reg
-  //
-  time : function (data, message){
-    //console.log(arguments)
-    var {userID, user, send, evt:{d:{mentions}} } = data;
-    console.log(121212, mentions)
-    var items = res.process(message);
-    //console.log(items); return
-
-    utils.userTz(userID).then(function(tz){
-      console.log(343434, userID, fromUserTz)
-      var msg = []
-      var fromUserTz = tz && tz.tz
-      // answer to channel
-      for (const item of items) {
-        msg.push('\"**' + item.key + '**\" is **'+ utils.tzConvert(item.data, fromUserTz) + ' in UTC time**')
-      }
-      if (msg.length)
-      send(data.user + ' has talked about '+  msg.join(' and '))
-
-      // PM to mentioned users
-      for (const muser of mentions) {
-        // check mentioned user setting option dmsg
-        utils.userTz(muser.id).then(function(tz){
-
-          if (!tz || !tz.dmsg) return
-
-          var msg = [],
-          toUserTz = tz && tz.tz
-
-          for (const item of items) {
-            msg.push('\"**' + item.key + '**\" is **'+ utils.tzConvert(item.data, fromUserTz, toUserTz) + '** in your **'+toUserTz+'** time')
-          }
-          if (msg.length)
-            send(data.user + ' has talked about (<#514297100566265869>):\r\n'+  msg.join(' and\r\n'), muser.id)
-        }).catch(function (){
-            //send(data.user + ' has talked about (<#514297100566265869>):\r\n'+  msg.join(' and\r\n'), muser.id)
-        })
-      }
-    })
   },
-  find: function(data, kw, page=1){
+  // process message to find time text
+  time : function (data, message){
+    console.log(arguments)
+    var items = res.process(message);
+
+    if(items.length==0) return
+    console.log(131313, items);
+
+    items = items.map(function(item){
+      if (item.abbr){
+        item.tz = utils.findTzName(item.abbr).shift()
+      }
+      return item
+    })
+
+    var {userID, user, send, d:{mentions, channel_id} } = data;
+    console.log(121212, mentions, data.evt)
+    // console.log(131313, items); return
+
+    utils.userTz(userID).then(
+      function(tz){
+        console.log(343434, userID, tz, mentions)
+        var msg = []
+        var fromUserTz = tz.tz
+        // answer to channel
+        for (const item of items) {
+          msg.push('\"**' + item.key + '**\" is **'+ utils.tzConvert(item, fromUserTz) + ' in UTC time**')
+        }
+
+        send(data.user + ' has talked about '+  msg.join(' and '))
+
+        // PM to mentioned users
+        if (!mentions) return
+
+        for (const muser of mentions) {
+          // check mentioned user setting option dmsg
+          utils.userTz(muser.id).then(
+            function(tz){
+
+              if (!tz.dmsg) return
+
+              var msg = [],
+              toUserTz = tz.tz
+
+              for (const item of items) {
+                msg.push('\"**' + item.key + '**\" is **'+ utils.tzConvert(item, fromUserTz, toUserTz) + '** in your **'+toUserTz+'** time')
+              }
+              if (msg.length)
+                send('**'+data.user + '** has talked in <#' + channel_id + '> about:\r\n'+  msg.join(' and\r\n'), muser.id)
+            },
+            // rejected: remind mentioned users about register a tz
+            function(er){
+              console.log('here')
+              var msg = []
+              for (const item of items) {
+                msg.push('\"**' + item.key + '**\" is **'+ utils.tzConvert(item, fromUserTz) + '** in **UTC** time')
+              }
+              if (msg.length)
+                send('**'+data.user + '** has talked in <#' + channel_id + '> about:\r\n'+  msg.join(' and\r\n') +
+                '. Please register a timezone allow me translate the time for you', muser.id)
+            }
+        ).catch(function (){
+              //send(data.user + ' has talked about (<#514297100566265869>):\r\n'+  msg.join(' and\r\n'), muser.id)
+          })
+        }
+      },
+      // rejected: talking user not register a tz
+      function(er){
+        console.log(343434, userID, er)
+        var msg = []
+        // not answer to channel just remind user regist a tz
+        for (const item of items) {
+          msg.push('\"**' + item.key.trim() + '**\"')
+        }
+
+        send('<@'+userID+'> You has talked '+  msg.join(' and ') + '. Please register a timezone to help translate your time correctly.')
+
+        // No need PM to mentioned users
+      }
+    ).catch(function (){},
+
+  )
+  },
+  find: function(data, kw, arg1, arg2){
     console.log(arguments)
 
     if (!kw) return
-    var page = isNaN(page)?1:Number.parseInt(page)
-    var result = utils.findTzName(kw)
+    var page = isNaN(arg1)?(isNaN(arg2)?1:Number.parseInt(arg2)):Number.parseInt(arg1)
+    var country = typeof arg1 == 'string'? arg1: null;
+    var result = utils.findTzName(kw, true, country)
     var {send} = data;
 
     // console.log(result)
@@ -138,39 +175,75 @@ const timeAlex = {
 
   },
 
-  help: function(data){
+  help: function(data, detail=false){
     var {send} = data;
-    utils.sendHelp(send)
+    return detail?utils.sendHelp(send):utils.sendHelpShort(send)
   },
-  now: function(data, arg1){
+  now: function(data, arg1, arg2){
     var {send, userID, isDM, bot} = data;
     if (arg1){
       var toTzUid = arg1.match(/<@(\d+)>/)
-      if (toTzUid && !isNaN(toTzUid[1])){
-        utils.userTz(toTzUid[1]).then(function(tz){
-          console.log(toTzUid[1], bot.users[toTzUid[1]].username)
-          send('<@'+userID+'>: Now is **'+moment.tz(tz&&tz.tz).format(FORMAT)+ '** at **@'+ bot.users[toTzUid[1]].username +'** place')
-        }).catch(function(err){
-          send('<@'+userID+'>: Now is **'+moment.tz(tz&&tz.tz).format(FORMAT)+ '** UTC\r\n(***'+ bot.users[toTzUid[1]].username +'*** *did not register a timezone*)')
-        })
+      if (toTzUid && !isNaN(toTzUid[1])){ // now of mentioned user
+        utils.userTz(toTzUid[1]).then(
+          function(tz){
+            console.log(toTzUid[1], bot.users[toTzUid[1]].username)
+            send('<@'+userID+'>: Now is **'+moment.tz(tz&&tz.tz).format(FORMAT)+ '** at **@'+ bot.users[toTzUid[1]].username +'** place')
+          },
+          function(er){
+            send('<@'+userID+'>: Now is **'+moment.tz('UTC').format(FORMAT)+ '** UTC\r\n(***'+ bot.users[toTzUid[1]].username +'*** *did not register a timezone*)')
+          }
+        ).catch(function(err){})
       }else if (moment.tz.zone(arg1)){ //
         send('<@'+userID+'>: Now is **'+moment.tz(arg1).format(FORMAT)+ '** in **'+ arg1 +'** timezone')
       }else{
-        var result = utils.findTzName(arg1).shift()
+        var result = utils.findTzName(arg1, true, arg2).shift()
         if (result)
           send('<@'+userID+'>: Now is **'+moment.tz(result).format(FORMAT)+ '** in **'+ result +'** timezone')
         else
           send('<@'+userID+'>: No timezone found')
       }
 
-    }else{
-      utils.userTz(userID).then(function(tz){
-        send('<@'+userID+'>: Now is **'+moment.tz(tz&&tz.tz).format(FORMAT)+ '** at your place')
-      }).catch(function(err){
-        send('<@'+userID+'>: Now is **'+moment.tz('UTC').format(FORMAT)+ '** UTC\r\n(***You*** *did not register a timezone*)')
-      })
+    }else{ // `now` use tz of asking user
+      utils.userTz(userID).then(
+        function(tz){
+          send('<@'+userID+'>: Now is **'+moment.tz(tz&&tz.tz).format(FORMAT_TIME)+ '** at your time')
+        },
+        function(er){
+          send('<@'+userID+'>: Now is **'+moment.tz('UTC').format(FORMAT)+ '** UTC\r\n(***You*** *did not register a timezone*)')
+        }).catch(function(err){
+        })
     }
-  }
+  },
+  run: function(data){
+    // console.log(222222,arguments)
+    var args = [...arguments].slice(1)
+    var {send, userID, isDM, bot} = data;
+
+    if (args.length == 0 || userID != '228072055008919552') return
+    var cmd = args.shift()
+
+    args = args.map(function(item){return item.replace(/_/g,' ')})
+    // const { spawn } = require('child_process');
+    const spawn = require('cross-spawn');
+    const child = spawn(cmd, args);
+
+    // use child.stdout.setEncoding('utf8'); if you want text chunks
+    child.stdout.on('data', (chunk) => {
+      // data from standard output is here as buffers
+      send(chunk.toString(), userID)
+    });
+
+    // since these are streams, you can pipe them elsewhere
+    child.stderr.on('data', (chunk) => {
+      // data from standard output is here as buffers
+      send(chunk.toString(), userID)
+    });
+
+    child.on('close', (code) => {
+      send(`child process exited with code ${code}`, userID)
+      console.log(`child process exited with code ${code}`);
+    });
+  }, 
 }
 
 var utils = {
@@ -181,6 +254,7 @@ var utils = {
       db.findOne(query , function (err, doc) {   // Callback is optional
         console.log("Found: ", err, doc)
         if (err||!doc){
+          console.log(2222222222,err)
           reject(err)
         }else{
           resolve(doc)
@@ -191,7 +265,7 @@ var utils = {
   },
   tzConvert : function(timeData, fromTz, toTz='UTC'){
     console.log(44444444, arguments)
-    let a = moment.tz(timeData.value, timeData.format, fromTz)
+    let a = moment.tz(timeData.value, timeData.format, timeData.tz || fromTz)
     a.tz(toTz)
     return a.format(FORMAT)
   },
@@ -207,7 +281,7 @@ var utils = {
     `@TimeAlexa reg` without arguments to check your setting \r\n \
     `@TimeAlexa find` to find timezone right name \r\n');
   },
-  sendHelp: function(send){
+  sendHelp: function(send, bot){
     send({
       color: 3447003,
       // author: {
@@ -215,49 +289,88 @@ var utils = {
       //   icon_url: client.user.avatarURL
       // },
       title: "Help for TimeAlexa",
-      url: "http://google.com",
+      url: "https://discordbots.org/bot/509269359231893516",
       description: "TimeAlexa will check people's text content and pick up text parts that **considerated a time** in: \r\n \
       1. Your text: convert to UTC+0 and send right in channel\r\n \
       2. Others text that mentioned you: convert to your Tz and Direct Messages to you\r\n \
       (only with **Direct Message option** is on)",
-      fields: [{
-        name: "Register Setting",
-        value: "```@TimeAlexa reg {timezone} [msg on|off]```"
-      },
-      {
-        name: "Check Settings",
-        value: "```@TimeAlexa reg```_without any arguments_\r\n"
-      },
-      {
-        name: "Find Timezone Name",
-        value: "```@TimeAlexa find {keyword}```{keyword} _with all upcase will take as abbreviation like PST_\r\n*otherwise will take as timezone name like Los_Angeles or just los*\r\n\r\n"
-      },
-      {
-        name: "Current Time",
-        value: "```@TimeAlexa now [@mention_user|timezone_search]```**wo. @mention_user**: _Display current time with your registerd timezone_\r\nExample: ` @TimeAlexa now `\r\n"+
-               "\r\n**with @mention_user**: *will show current time in mentioned user's timezone (if he registed)*\r\nExample: ` @TimeAlexa now @username `\r\n" +
-               "\r\n**with timezone_search**: *will show current time in found first timezone*\r\nExample: ` @TimeAlexa now los `"
-      },
-      {
-        name: "\r\nConsiderated time - Supported",
-        value: "`2 am` `5pm`\r\n"+
-               "`2:30am` `12:03 pm`\r\n"
-      }
-
+      fields: [
+        {
+          name: "Register Setting",
+          value: "```@TimeAlexa reg {timezone} [msg on|off]```"
+        },
+        {
+          name: "Check Settings",
+          value: "```@TimeAlexa reg```_without any arguments_\r\n"
+        },
+        {
+          name: "Find Timezone Name",
+          value: "```@TimeAlexa find {keyword}```{keyword} _with all upcase will take as abbreviation like PST_\r\n*otherwise will take as timezone name like Los_Angeles or just los*\r\n\r\n"
+        },
+        {
+          name: "Current Time",
+          value: "```@TimeAlexa now [@mention_user|timezone_search]```**wo. @mention_user**: _Display current time with your registerd timezone_\r\nExample: ` @TimeAlexa now `\r\n"+
+                 "\r\n**with @mention_user**: *will show current time in mentioned user's timezone (if he registed)*\r\nExample: ` @TimeAlexa now @username `\r\n" +
+                 "\r\n**with timezone_search**: *will show current time in found first timezone*\r\nExample: ` @TimeAlexa now los `"
+        },
+        {
+          name: "\r\nConsiderated time - Supported",
+          value: "`2 am` `5PM`\r\n"+
+                 "`2:30am` `12:03 PM`\r\n"+
+                 "`2:30am est` `12:03 PM PST`\r\n"
+        },
+        {
+          name: "Notes: you doesn't need @TimeAlexa in PM",
+          value: "Ex: `@TimeAlexa now` -> `now`"
+        }
       ],
       timestamp: new Date(),
       footer: {
         // icon_url: client.user.avatarURL,
-        text: "Notes: you doesn't need @TimeAlexa in PM with bot\r\n© TimeAlex"
+        text: "© TimeAlex"
       }
     })
   },
-  findTzName: function (kw){
+  sendHelpShort: function(send, bot){
+    send({
+      color: 3447003,
+      // author: {
+      //   name: client.user.username,
+      //   icon_url: client.user.avatarURL
+      // },
+      title: "Help for TimeAlexa",
+      url: "https://discordbots.org/bot/509269359231893516",
+      description: "TimeAlexa translate time text in context like **2pm** **12:03 PM PST**,...",
+      fields: [
+        {
+          name: "1. Find a Timezone",
+          value: "```@TimeAlexa find {keyword}```{keyword}: `PST`, `Los_Angeles` or just `los`"
+        },
+        {
+          name: "2. Set your Timezone",
+          value: "```@TimeAlexa reg {timezone} [msg on|off]```"
+        },
+        {
+          name: "\r\n* More detail ?",
+          value: "```@TimeAlexa help more```Notes: you doesn't need @TimeAlexa in PM with bot"
+        }
+      ],
+      timestamp: new Date(),
+      footer: {
+        // icon_url: client.user.avatarURL,
+        text: "© TimeAlex"
+      }
+    })
+  },
+  findTzName: function (kw, searchCity=false, country){
+    console.log(555555, arguments)
     var result = []
     if (kw.toUpperCase()!=kw){
+      // find in moment zone
       let tzList = moment.tz.names()
       result = tzList.filter(function(i){return i.toUpperCase().indexOf(kw.toUpperCase()) > -1})
       //result = abbrList.filter(function(item){return item[0].toUpperCase().indexOf(kw.toUpperCase()) > -1}).map(function(i){return i[0] + ' ('+ i[1] + ')'})
+      // if no result find in country
       if (result.length==0){ //try  to get by country
         var result2 = Object.values(countries).find(function(item){
           return item.name.toUpperCase().indexOf(kw.toUpperCase()) > -1
@@ -265,6 +378,8 @@ var utils = {
         if (result2)
           return [result2.zones[0]]
       }
+      // find in cities Data
+
     }else{// if all upcase -> search abbreviation
       var current = new Date().getTime()
       var abbrList = Object.values(moment.tz._zones).map(function(item){
@@ -273,23 +388,22 @@ var utils = {
           item = moment.tz.unpack(item)
 
         return [item.name, moment.tz.zone(item.name).abbr(current)]
-
-        // if (item instanceof moment.tz.Zone)
-        //   return [item.name, item.abbrs.filter(function (value, index, self) {
-        //     return self.indexOf(value) === index;
-        //   }).join(' ')]
-        // else{
-        //   var it = item.split('|').slice(0,2)
-        //   return [it[0], it[1].split(' ').filter(function (value, index, self) {
-        //     return self.indexOf(value) === index;
-        //   }).join(' ')]
-        // }
       })
-
+      // abbreviation need exact match
       result = abbrList.filter(function(item){return item[1].toUpperCase().indexOf(kw.toUpperCase()) > -1}).map(function(i){return i[0]})
       console.log(4444444, result)
 
     }
+
+    if (result.length==0 && searchCity){
+      var cityTz = require('../ref/cities-tz.min.json')
+      result = cityTz.filter(function(item){
+        return (!country || country.toUpperCase() == item.country.toUpperCase()) && item.name.toUpperCase().indexOf(kw.toUpperCase()) > -1 && item.zones && item.zones.length
+      }).map(function(item){
+        return item.zones[0]
+      })
+    }
+
     return result
   },
 

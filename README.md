@@ -1,3 +1,5 @@
+[![Discord Bots](https://discordbots.org/api/widget/status/509269359231893516.svg?noavatar=true)](https://discordbots.org/bot/509269359231893516)[![Discord Bots](https://discordbots.org/api/widget/upvotes/509269359231893516.svg)](https://discordbots.org/bot/509269359231893516)
+
 # TimeAlex
 A Discord Bot help translate mentioned time for user across timezone
 
@@ -5,7 +7,9 @@ TimeAlexa will check people's text content and pick up text parts that **conside
   1. Your text: convert to UTC+0 and send right in channel
   2. Others text that mentioned you: convert to your Tz and Direct Messages to you  
  (only with **Direct Message option** is on)
-      
+
+## [Add to your Discord Server!](https://discordapp.com/oauth2/authorize?client_id=509269359231893516&scope=bot&permissions=3072)
+
 ## Register Setting
     @TimeAlexa reg {timezone} [msg on|off]
 
@@ -32,3 +36,4 @@ TimeAlexa will check people's text content and pick up text parts that **conside
 ## Considerated time - Supported
 *   Short hour: `2 am` `5pm`  
 *   With minutes: `2:30am` `12:03 pm`
+*   With abbr: `2:30am EST` `12:03 pm PST`

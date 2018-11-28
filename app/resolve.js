@@ -1,14 +1,20 @@
 var moment = require('moment');
 // console.log(moment().format());
-var dic = {
-  ampm2: {reg:/(?:\s)*(1?\d:[0-6]?\d)\s*(am|pm)(?:\s)*/g, format:'hh:mm a', res:'ampm'}, //12-11am,12-11pm
-  ampm: {reg:/(?:\s)*(1?\d)\s*(am|pm)(?:\s)*/g, format:'hh a', res:'ampm'}, //12-11am,12-11pm
-},
+var dic = [
+  {reg:/(?:\s)*(1?\d:[0-6]?\d)\s*(am|pm)(?:\s)*(EST|PST|DST|EET)?(?:\s)*/ig, format:'hh:mm a', res:'ampm'}, //12-11am,12-11pm
+  {reg:/(?:\s)*(1?\d)\s*(am|pm)(?:\s)*(EST|PST|DST|EET)?(?:\s)*/ig, format:'hh a', res:'ampm'}, //12-11am,12-11pm
+],
 resolve = {
-  ampm: function (match, key){
-    match = match.splice(1)
-    console.log(888888, match.join(' '), key)
-    return {value:match.join(' '), format: dic[key].format}
+  ampm: function (match, format){
+    var match = match.splice(1)
+    // console.log(888888, match)
+    var ret = {}
+    if (match[2])
+      ret.abbr = match.pop().toUpperCase()
+
+    // console.log(888888, match.join(' '), format)
+    return { ...ret, value:match.join(' '), format: format}
+
   }
 },
 abbreviation = {
@@ -41,27 +47,22 @@ module.exports = {
   // find time in text
   process: function (s){
     var ret = []
-    for (var key in dic) {
-      if (dic.hasOwnProperty(key)) {
-        console.log(key, dic[key]);
-        var {reg, res} = dic[key]
+    dic.map(function(item){
+      //console.log(dic[key]);
+      var {reg, res, format} = item
+      console.log(77777777,item)
+      do {
+        m = reg.exec(s);
+        if (m) {
+          console.log(m[1], 222, m[2]);
+          ret.push({key:m[0], ... resolve[res] && resolve[res](m, format)})
+        }
+      } while (m);
 
-        do {
-          m = reg.exec(s);
-          if (m) {
-            console.log(m[1], 222, m[2]);
-            ret.push({key:m[0], data: resolve[res] && resolve[res](m, key)})
-          }
-        } while (m);
+      s = s.replace(reg, ' ')
 
-        s = s.replace(reg, ' ')
-        console.log(1111,s)
-        // var ret = s.match(new RegExp(reg))
-        // if (ret){
-        //   return resolve[key] && resolve[key](ret, key)
-        // }
-      }
-    }
+      console.log(1111,s)
+    })
     return ret;
   }
 
