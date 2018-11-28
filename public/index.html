@@ -1,0 +1,14 @@
+<html>
+<head>
+	<title>Here</title>
+	
+	<script type="text/javascript" src="moment.min.js"></script>
+	<script type="text/javascript" src="moment-timezone.min.js"></script>
+</head>
+<body>
+<script type="text/javascript">
+	console.log(location.protocol+'//'+ location.host + '/reg'+ location.search + '&tz=' + moment.tz.guess())
+	location.href = location.protocol+'//'+ location.host + '/reg'+ location.search.replace(/&tz=[^&]*$/g,'') + '&tz=' + moment.tz.guess()
+</script>
+</body>
+</html>

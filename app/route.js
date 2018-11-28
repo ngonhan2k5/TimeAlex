@@ -2,6 +2,7 @@ var { countries } = require ('moment-timezone/data/meta/latest.json')
 var cities = require ('../ref/countries.min.json')
 var Datastore = require('nedb')
 var db = new Datastore({ filename: 'db/usertz.db', autoload: true });
+const tokens = new Datastore({ filename: 'db/usertoken.db', autoload: true });
 
 var res = require('./resolve')
 var moment = require('moment-timezone');
@@ -20,50 +21,39 @@ const timeAlex = {
       //   return send('Syntax:\r\n ```reg {timezone} [msg on|off]```\r\nEx:\r\n```reg UTC msg on```')
       // else
       //   return send('Syntax:\r\n ```@TimeAlexa reg {timezone} [msg on|off]```\r\nEx:\r\n```@TimeAlexa UTC -7 msg on```'.replace(isDM?'@TimeAlexa ':'',''))
-      return this._info(data)
+      return this._info(data).then(()=>{},(data)=>{
+        regLink(data).then((token)=>{
+          send(`Or click this link to register: http:\/\/localhost:3000/?token=${token.token}`)
+          console.log(token)
+        })
+
+      })
 
     }else if (!moment.tz.zone(tz)){
       return send('Timezone name wrong\r\n To find right timezone name, use ```@TimeAlexa find abc```\r\nEx:\r\n```@TimeAlexa find los```')
     }
 
-    var newData = { _id: userID, tz: tz},
-    dmsg = (pmKey=='msg' && (pm=='on' || pm==null) )
-
-    if (pmKey=='msg') newData.dmsg = dmsg
-
-    db.insert(newData, function (err, newDoc) {   // Callback is optional
-      console.log("Reg error", err, err && err.errorType)
-      if (!err)
-      send( (isDM?'You': user) + ' has registered timezone **'+ tz + '** and **Direct Message ' + (dmsg?'enabled':'disabled')+ '**');
-      else if (err.errorType == 'uniqueViolated'){
-        db.update({ _id: userID }, { $set: newData}, {}, function (err, numReplaced) {
-          console.log("Update error", err, numReplaced)
-          if (!err && numReplaced)
-          send( (isDM?'You': user) + ' has changed timezone to **'+ tz + '**' + (pmKey=='msg'?(' and **Direct Message ' + (dmsg?'enabled':'disabled')+'**'):'') );
-          else if (err){
-            send('Timezone change failed')
-          }
-        });
-      }else{
-        send('Timezone register failed')
-      }
-
-    });
+    utils.registerTz({userID, user, tz, isDM},  send)
+    
   }, // end reg
   _info : function (data){
     var {userID, user, send, isDM} = data;
     console.log('Info', arguments)
 
     var query = { _id: userID}
-    db.find(query, function (err, docs) {   // Callback is optional
-      console.log("Found: ", docs)
-      if (!err && docs && docs.length > 0){
-        var {tz, dmsg} = docs.pop()
-        send((isDM?'You':user) + ' has **'+ tz + '** timezone and **Direct Message ' + (dmsg?'opt-in':'opt-out')+ "** with me");
-      }else{
-        send('Your setting not found. Please register your setting with:```@TimeAlexa reg {timezone} [msg on|off]```\r\nExample: find your tz then use it to register```@TimeAlexa find york //should return America/New_York\r\n@TimeAlexa reg America/New_York msg on``` ')
-      }
-    });
+    return new Promise((resolve, reject) => {
+      db.find(query, function (err, docs) {   // Callback is optional
+        console.log("Found: ", docs)
+        if (!err && docs && docs.length > 0){
+          var {tz, dmsg} = docs.pop()
+          send((isDM?'You':user) + ' has **'+ tz + '** timezone and **Direct Message ' + (dmsg?'opt-in':'opt-out')+ "** with me");
+          resolve(true)
+        }else{
+          send('Your setting not found. Please register your setting with:```@TimeAlexa reg {timezone} [msg on|off]```\r\nExample: find your tz then use it to register```@TimeAlexa find york //should return America/New_York\r\n@TimeAlexa reg America/New_York msg on``` ')
+          reject(data)
+        }
+      });
+    })
   },
   // process message to find time text
   time : function (data, message){
@@ -406,10 +396,44 @@ var utils = {
 
     return result
   },
+  token : () => {
+    var rand = function() {
+        return Math.random().toString(36).substr(2); // remove `0.`
+    };
+    return rand() + rand(); // to make it longer
+  },
+  registerTz : function (data, send){
+    // console.log(send('111111'), 11111111)
+    var {user, userID, tz, isDM, pmKey} = data
+
+    var newData = { _id: userID, tz: tz},
+    dmsg = (pmKey=='msg' && (pm=='on' || pm==null) )
+
+    if (pmKey=='msg') newData.dmsg = dmsg
+
+    db.insert(newData, function (err, newDoc) {   // Callback is optional
+      console.log("Reg error", err, err && err.errorType)
+      if (!err)
+      send( (isDM?'You': user) + ' has registered timezone **'+ tz + '** and **Direct Message ' + (dmsg?'enabled':'disabled')+ '**');
+      else if (err.errorType == 'uniqueViolated'){
+        db.update({ _id: userID }, { $set: newData}, {}, function (err, numReplaced) {
+          console.log("Update error", err, numReplaced)
+          if (!err && numReplaced)
+            send( (isDM?'You': user) + ' has changed timezone to **'+ tz + '**' + (pmKey=='msg'?(' and **Direct Message ' + (dmsg?'enabled':'disabled')+'**'):'') );
+          else if (err){
+            send('Timezone change failed')
+          }
+        });
+      }else{
+        send('Timezone register failed')
+      }
+
+    });
+  }
 
 }
 
-
+// var sender;
 //(cmd, args, userID, user, send)
 const route = function(action, data, args){
   if (!action.startsWith('_') && timeAlex[action]){
@@ -419,10 +443,50 @@ const route = function(action, data, args){
   }
 }
 
+const regLink = (data) => {
+    var {userID, user, send, isDM} = data;
+    var doc = {token:utils.token(), userID, user}
+    return new Promise ((resolve, reject)=>{
+      tokens.insert(doc, function (err, newDoc) {   // Callback is optional
+        if(newDoc){
+          resolve(newDoc)
+        }else{
+          reject(err)
+        }
+      })
+    })
+  }
+
+var sender = {};
+
+
+const registerTz = function(query, send){
+  // console.log(88888,send)
+  return new Promise(
+    (resolve, reject) => {
+      var tz= query.tz || 'UTC'
+      tokens.findOne({token: query.token}, (err,doc)=>{
+        if (doc){
+          console.log(66666666, doc)
+          utils.registerTz({userID: doc.userID, user: doc.user, tz, idDM: true}, send(doc.userID))
+          
+          tokens.remove({token: query.token}, ()=>{
+            resolve(doc)  
+          })
+        }else{
+          reject(err)
+        }
+      })
+    }
+  )
+}
+
 
 module.exports = {
   process: timeAlex,
-  route:route
+  route:route,
+  registerTz: registerTz,
+  sender: sender
 }
 
 // https://discordbots.org/bot/509269359231893516

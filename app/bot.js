@@ -6,11 +6,13 @@ var isTest = process.env.OS == 'Windows_NT'
 var Discord = require('discord.io');
 var logger = require('winston');
 var auth = require('../db/'+(isTest?'authtest':'auth')+'.json');
+
 var {route} = require('./route')
-var server = require('.server')
 
 const BOTID = isTest?'<@515540575504826368>':'<@509269359231893516>',
       BOTNAME = isTest?'@TimeAlexaT':'@TimeAlexa'
+
+
 
 // Configure logger settings
 logger.remove(logger.transports.Console);
@@ -23,21 +25,10 @@ var bot = new Discord.Client({
   token: auth.token,
   autorun: true
 });
-bot.on('ready', function (evt) {
-  logger.info('Connected');
-  logger.info('Logged in as: ');
-  logger.info(bot.username + ' - (' + bot.id + ')');
-  // console.log(1111,bot)
-});
 
-bot.on('message', function (user, userID, channelID, message, evt) {
-  // avoid message send by bots
-  if (evt.d.author && evt.d.author.bot) return
 
-  // Is direct message
-  var isDM = !evt.d.guild_id;
 
-  var send = function (msg, chID=channelID){
+var sender = function (bot, msg, chID, isDM=false){
     if (typeof msg == 'string')
       bot.sendMessage({
         to: chID,
@@ -49,6 +40,38 @@ bot.on('message', function (user, userID, channelID, message, evt) {
         embed: msg
       });
   }
+
+
+
+bot.on('ready', function (evt) {
+  logger.info('Connected');
+  logger.info('Logged in as: ');
+  logger.info(bot.username + ' - (' + bot.id + ')');
+
+  var sendPM = function (userID){
+      return function(msg){sender(bot, msg, userID, true)}
+  }
+
+  
+  // console.log(1111,bot)
+  var server = require('./server').start(sendPM)
+
+});
+
+
+
+
+bot.on('message', function (user, userID, channelID, message, evt) {
+
+  // avoid message send by bots
+  if (evt.d.author && evt.d.author.bot) return
+
+  // Is direct message
+  var isDM = !evt.d.guild_id;
+
+  var send = function (msg, chID=channelID){
+        return sender(bot, msg, chID, isDM)
+    }
 
   var cmd = 'time',
       args = [message],
@@ -67,3 +90,6 @@ bot.on('message', function (user, userID, channelID, message, evt) {
   route(cmd, data, args) || route('time', data, [message])
 
 });
+
+
+
