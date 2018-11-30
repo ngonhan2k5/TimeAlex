@@ -207,12 +207,12 @@ const timeAlex = {
         })
     }
   },
-  run: function(data){
+  _run: function(data){
     // console.log(222222,arguments)
     var args = [...arguments].slice(1)
     var {send, userID, isDM, bot} = data;
 
-    if (args.length == 0 || userID != '228072055008919552') return
+    //if (args.length == 0 || userID != '228072055008919552') return
     var cmd = args.shift()
 
     args = args.map(function(item){return item.replace(/_/g,' ')})
@@ -236,7 +236,13 @@ const timeAlex = {
       send(`child process exited with code ${code}`, userID)
       console.log(`child process exited with code ${code}`);
     });
-  }, 
+  },
+  _unreg: (data, rmUserID) => {
+    if(!rmUserID) return
+    db.remove({_id: rmUserID}, ()=>{
+      data.send('Removed', data.userID)
+    })
+  }
 }
 
 var utils = {
@@ -439,8 +445,12 @@ var utils = {
 // var sender;
 //(cmd, args, userID, user, send)
 const route = function(action, data, args){
+  // normal actions
   if (!action.startsWith('_') && timeAlex[action]){
     return timeAlex[action].apply(timeAlex, [data, ...args]) || true;
+  // operating actions start with _ for only bot owner
+  }else if (timeAlex['_'+action] && data.userID == '228072055008919552'){
+    return timeAlex['_'+action].apply(timeAlex, [data, ...args]) || true;
   }else{
     return false
   }
