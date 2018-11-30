@@ -3,11 +3,11 @@ const app = express()
 const port = 3000
 
 var start = function(send){
+	const route = require('./route')
+	
 	app.use('/',express.static('public'))
 
 	app.get('/reg', (req, res) => {
-
-		const route = require('./route')
 
 		console.log(req.query.token)
 		console.log(req.get('Accept-Language'))
