@@ -35,6 +35,11 @@ var start = function(send){
 			res.send('Sorry!Nothing happed')
 		}
 	})
+	
+	app.get('/thook', (req, res) => {
+		route.log('Hook called', req.query, send)
+		res.send()
+	})
 
 	app.listen(port, () => console.log(`Example app listening on port ${port}!`))
 }
