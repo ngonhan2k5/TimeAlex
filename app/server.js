@@ -9,10 +9,12 @@ var start = function(send){
 
 	app.get('/reg', (req, res) => {
 
-		console.log(req.query.token)
-		console.log(req.get('Accept-Language'))
-		if (req.query.token){
-			route.registerTz(req.query, send).then(
+		var params = req.url.split('?').pop().split('&')
+		var query = {token:params[0], tz:params[1]}
+
+		console.log(query.token)
+		if (query.token){
+			route.registerTz(query, send).then(
 				(ret) => {
 					res.send(`${ret.user}: Thank you for registered!`)
 				},
@@ -37,8 +39,10 @@ var start = function(send){
 	})
 	
 	app.get('/thook', (req, res) => {
-		route.log('Hook called', req.query, send)
-		res.send()
+		res.send(req.url.split('?').pop().split('&'))
+		//res.send(Object.keys(req.query).map(function(i){return i}))
+		// route.log('Hook called', req.query, send)
+		//res.send()
 	})
 
 	app.listen(port, () => console.log(`Example app listening on port ${port}!`))

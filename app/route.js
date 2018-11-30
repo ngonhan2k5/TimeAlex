@@ -1,4 +1,4 @@
-var isTest = process.env.OS == 'Windows_NT'
+var isTest = process.env.OS == 'Windows_NT' || process.argv[2] == 'debug'
 const LINK = isTest?'localhost:3000':'talex.b-reserved.com'
 
 var { countries } = require ('moment-timezone/data/meta/latest.json')
@@ -26,7 +26,7 @@ const timeAlex = {
       //   return send('Syntax:\r\n ```@TimeAlexa reg {timezone} [msg on|off]```\r\nEx:\r\n```@TimeAlexa UTC -7 msg on```'.replace(isDM?'@TimeAlexa ':'',''))
       return this._info(data).then(()=>{},(data)=>{
         regLink(data).then((token)=>{
-          send(`Or click to register: http:\/\/${LINK}/?token=${token.token}`, userID)
+          send(`Or click to register: http:\/\/${LINK}/?${token.token}`, userID)
           console.log(token)
         })
 
@@ -93,6 +93,7 @@ const timeAlex = {
         if (!mentions) return
 
         for (const muser of mentions) {
+          console.log(muser)
           // check mentioned user setting option dmsg
           utils.userTz(muser.id).then(
             function(tz){
@@ -115,9 +116,17 @@ const timeAlex = {
               for (const item of items) {
                 msg.push('\"**' + item.key + '**\" is **'+ utils.tzConvert(item, fromUserTz) + '** in **UTC** time')
               }
-              if (msg.length)
-                send('**'+data.user + '** has talked in <#' + channel_id + '> about:\r\n'+  msg.join(' and\r\n') +
-                '. Please register a timezone allow me translate the time for you', muser.id)
+              if (msg.length){
+                console.log(8888888888, muser.id)
+                // remind 
+                var newData = Object.assign(data, {userID: muser.id, user:muser.username})
+                regLink(newData).then((token)=>{
+                  send('**'+data.user + '** has talked in <#' + channel_id + '> about:\r\n'+  msg.join(' and\r\n') +
+                      '.\r\nPlease register a timezone allow me translate the time for you:\r\n'+
+                      `http:\/\/${LINK}/?${token.token}`, muser.id)
+                })
+                
+              }
             }
         ).catch(function (){
               //send(data.user + ' has talked about (<#514297100566265869>):\r\n'+  msg.join(' and\r\n'), muser.id)
@@ -134,6 +143,12 @@ const timeAlex = {
         }
 
         send('<@'+userID+'> You has talked '+  msg.join(' and ') + '. Please register a timezone to help translate your time correctly.')
+
+        regLink(data).then((token)=>{
+          send('Please register a timezone to help translate your time correctly:\r\n'+
+            `http:\/\/${LINK}/?${token.token}`, userID)
+        })
+
 
         // No need PM to mentioned users
       }
@@ -406,10 +421,7 @@ var utils = {
     return result
   },
   token : () => {
-    var rand = function() {
-        return Math.random().toString(36).substr(2); // remove `0.`
-    };
-    return rand() + rand(); // to make it longer
+    return Math.random().toString(36).substr(2); // remove `0.`
   },
   registerTz : function (data, send){
     // console.log(send('111111'), 11111111)
@@ -457,7 +469,7 @@ const route = function(action, data, args){
 }
 
 const regLink = (data) => {
-    var {userID, user, send, isDM} = data;
+    var {user, send, isDM, userID} = data
     var doc = {token:utils.token(), userID, user}
     return new Promise ((resolve, reject)=>{
       tokens.insert(doc, function (err, newDoc) {   // Callback is optional
@@ -483,7 +495,7 @@ const registerTz = function(query, send){
           console.log(66666666, doc)
           utils.registerTz({userID: doc.userID, user: doc.user, tz, idDM: true}, send(doc.userID))
           
-          tokens.remove({token: query.token}, ()=>{
+          tokens.remove({userID: doc.userID}, { multi: true }, ()=>{
             resolve(doc)  
           })
         }else{

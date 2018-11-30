@@ -1,7 +1,7 @@
 //https://discordapp.com/oauth2/authorize?client_id=509269359231893516&scope=bot&permissions=3072
 //https://discordapp.com/oauth2/authorize?client_id=515540575504826368&scope=bot&permissions=3072
 
-var isTest = process.env.OS == 'Windows_NT'
+var isTest = process.env.OS == 'Windows_NT' || process.argv[2] == 'debug'
 
 var Discord = require('discord.io');
 var logger = require('winston');
