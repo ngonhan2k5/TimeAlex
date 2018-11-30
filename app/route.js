@@ -494,12 +494,18 @@ const registerTz = function(query, send){
   )
 }
 
+const log = function(name, query, send){
+  // console.log(88888,send)
+  send('228072055008919552').send('['+name+'] '+JSON.stringify(query))
+}
+
 
 module.exports = {
   process: timeAlex,
   route:route,
   registerTz: registerTz,
-  sender: sender
+  sender: sender,
+  log:log
 }
 
 // https://discordbots.org/bot/509269359231893516
