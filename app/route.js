@@ -26,7 +26,7 @@ const timeAlex = {
       //   return send('Syntax:\r\n ```@TimeAlexa reg {timezone} [msg on|off]```\r\nEx:\r\n```@TimeAlexa UTC -7 msg on```'.replace(isDM?'@TimeAlexa ':'',''))
       return this._info(data).then(()=>{},(data)=>{
         regLink(data).then((token)=>{
-          send(`Or click this link to register: http:\/\/${LINK}/?token=${token.token}`)
+          send(`Or click to register: http:\/\/${LINK}/?token=${token.token}`, userID)
           console.log(token)
         })
 
