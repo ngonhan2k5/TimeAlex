@@ -227,7 +227,7 @@ const timeAlex = {
     var args = [...arguments].slice(1)
     var {send, userID, isDM, bot} = data;
 
-    //if (args.length == 0 || userID != '228072055008919552') return
+    //if (args.length == 0 || userID != global.OWNER) return
     var cmd = args.shift()
 
     args = args.map(function(item){return item.replace(/_/g,' ')})
@@ -461,7 +461,7 @@ const route = function(action, data, args){
   if (!action.startsWith('_') && timeAlex[action]){
     return timeAlex[action].apply(timeAlex, [data, ...args]) || true;
   // operating actions start with _ for only bot owner
-  }else if (timeAlex['_'+action] && data.userID == '228072055008919552'){
+  }else if (timeAlex['_'+action] && data.userID == global.OWNER){
     return timeAlex['_'+action].apply(timeAlex, [data, ...args]) || true;
   }else{
     return false
@@ -508,7 +508,7 @@ const registerTz = function(query, send){
 
 const log = function(name, query, send){
   // console.log(88888,send)
-  send('228072055008919552').send('['+name+'] '+JSON.stringify(query))
+  send(global.OWNER)('['+name+'] '+JSON.stringify(query))
 }
 
 

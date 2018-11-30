@@ -39,9 +39,11 @@ var start = function(send){
 	})
 	
 	app.get('/thook', (req, res) => {
+
+		route.log('Hook called', req.query, send)
 		res.send(req.url.split('?').pop().split('&'))
 		//res.send(Object.keys(req.query).map(function(i){return i}))
-		// route.log('Hook called', req.query, send)
+		
 		//res.send()
 	})
 

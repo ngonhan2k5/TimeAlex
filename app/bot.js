@@ -10,9 +10,10 @@ var auth = require('../db/'+(isTest?'authtest':'auth')+'.json');
 var {route} = require('./route')
 
 const BOTID = isTest?'<@515540575504826368>':'<@509269359231893516>',
-      BOTNAME = isTest?'@TimeAlexaT':'@TimeAlexa'
+      BOTNAME = isTest?'@TimeAlexaT':'@TimeAlexa',
+      OWNER = '228072055008919552'
 
-
+global.OWNER = OWNER
 
 // Configure logger settings
 logger.remove(logger.transports.Console);
