@@ -53,12 +53,20 @@ bot.on('ready', function (evt) {
       return function(msg){sender(bot, msg, userID, true)}
   }
 
-  
+
   // console.log(1111,bot)
   var server = require('./server').start(sendPM)
 
 });
 
+
+bot.on("any", function(event) {
+  if(event.t == 'MESSAGE_REACTION_ADD'){
+      if (event.d.emoji.name == '🕰')
+        console.log(event) //Logs every event
+  }
+
+});
 
 
 
@@ -87,10 +95,11 @@ bot.on('message', function (user, userID, channelID, message, evt) {
     cmd = 'help'
     args = []
   }
+  if(isDM && message.indexOf('>') > -1 ){
+    cmd = 'from'
+    args = message.split('>').map((item)=> item.trim());
+  }
 
   route(cmd, data, args) || route('time', data, [message])
 
 });
-
-
-

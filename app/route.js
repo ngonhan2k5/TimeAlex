@@ -26,7 +26,7 @@ const timeAlex = {
       //   return send('Syntax:\r\n ```@TimeAlexa reg {timezone} [msg on|off]```\r\nEx:\r\n```@TimeAlexa UTC -7 msg on```'.replace(isDM?'@TimeAlexa ':'',''))
       return this._info(data).then(()=>{},(data)=>{
         regLink(data).then((token)=>{
-          send(`Or click to register: http:\/\/${LINK}/?${token.token}`, userID)
+          send(`Or click to register: http:\/\/${LINK}/reg?${token.token}`, userID)
           console.log(token)
         })
 
@@ -37,7 +37,7 @@ const timeAlex = {
     }
 
     utils.registerTz({userID, user, tz, isDM},  send)
-    
+
   }, // end reg
   _info : function (data){
     var {userID, user, send, isDM} = data;
@@ -118,14 +118,14 @@ const timeAlex = {
               }
               if (msg.length){
                 console.log(8888888888, muser.id)
-                // remind 
+                // remind
                 var newData = Object.assign(data, {userID: muser.id, user:muser.username})
                 regLink(newData).then((token)=>{
                   send('**'+data.user + '** has talked in <#' + channel_id + '> about:\r\n'+  msg.join(' and\r\n') +
                       '.\r\nPlease register a timezone allow me translate the time for you:\r\n'+
                       `http:\/\/${LINK}/?${token.token}`, muser.id)
                 })
-                
+
               }
             }
         ).catch(function (){
@@ -202,8 +202,10 @@ const timeAlex = {
           }
         ).catch(function(err){})
       }else if (moment.tz.zone(arg1)){ //
+
         send('<@'+userID+'>: Now is **'+moment.tz(arg1).format(FORMAT)+ '** in **'+ arg1 +'** timezone')
       }else{
+        console.log(3333333333,'here', arg1)
         var result = utils.findTzName(arg1, true, arg2).shift()
         if (result)
           send('<@'+userID+'>: Now is **'+moment.tz(result).format(FORMAT)+ '** in **'+ result +'** timezone')
@@ -257,6 +259,50 @@ const timeAlex = {
     db.remove({_id: rmUserID}, ()=>{
       data.send('Removed', data.userID)
     })
+  },
+  from: (data, message, toTz) => {
+    var items = res.process(message);
+    var _toTz = utils.findTzName(toTz, true).shift()
+
+    if(items.length==0) return
+    console.log(131313, items);
+
+    items = items.map(function(item){
+      if (item.abbr){
+        item.tz = utils.findTzName(item.abbr).shift()
+      }
+      return item
+    })
+
+    var {userID, user, send, d:{mentions, channel_id} } = data;
+    console.log(121212, mentions, data.evt)
+    // console.log(131313, items); return
+
+    utils.userTz(userID).then(
+      function(tz){
+        console.log(343434, userID, tz, mentions)
+        var msg = []
+        var fromUserTz = tz.tz
+        // answer to channel
+        for (const item of items) {
+          msg.push('\"**' + item.key + '**\" is **'+ utils.tzConvert(item, fromUserTz, _toTz) + ' in '+_toTz+' time**')
+        }
+
+        send(data.user + ' '+  msg.join(' and '))
+
+      },
+      // rejected: talking user not register a tz
+      function(er){
+
+        regLink(data).then((token)=>{
+          send('Please register a timezone to help translate your time correctly:\r\n'+
+            `http:\/\/${LINK}/?${token.token}`, userID)
+        })
+
+
+        // No need PM to mentioned users
+      }
+    ).catch(function (){})
   }
 }
 
@@ -494,9 +540,9 @@ const registerTz = function(query, send){
         if (doc){
           console.log(66666666, doc)
           utils.registerTz({userID: doc.userID, user: doc.user, tz, idDM: true}, send(doc.userID))
-          
+
           tokens.remove({userID: doc.userID}, { multi: true }, ()=>{
-            resolve(doc)  
+            resolve(doc)
           })
         }else{
           reject(err)
