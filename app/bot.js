@@ -86,19 +86,27 @@ bot.on('message', function (user, userID, channelID, message, evt) {
       args = [message],
       data = {userID, user, send, isDM, bot, d:evt.d}
 
-  if (message.startsWith(BOTID) || isDM) { //msg mention @TimeAlexa or Direct Message to bot,  DM chat have no guid_id
+  //msg mention @TimeAlexa or Direct Message to bot,  DM chat have no guid_id
+  if (message.startsWith(BOTID) || isDM) {
     args = message.split(' ');
+    // if mention bot -> remove the mention from args
     if (message.startsWith(BOTID)) args.shift()
-    cmd = args[0].toLowerCase();
-    args = args.splice(1);
+    // convert function
+    if (args.join(' ').indexOf('>') > -1){
+      cmd = 'from'
+      args = args.join(' ').split('>').map((item)=> item.trim());
+    }else{
+      cmd = args[0].toLowerCase();
+      args = args.splice(1);
+    }
   }else if (message.startsWith('!help')) { // global help
     cmd = 'help'
     args = []
   }
-  if(isDM && message.indexOf('>') > -1 ){
-    cmd = 'from'
-    args = message.split('>').map((item)=> item.trim());
-  }
+  // if(isDM && message.indexOf('>') > -1 ){
+  //   cmd = 'from'
+  //   args = message.split('>').map((item)=> item.trim());
+  // }
 
   route(cmd, data, args) || route('time', data, [message])
 

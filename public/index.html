@@ -1,15 +1,23 @@
 <html>
 <head>
-	<title>Redirect</title>
+	<title>Redirect Confirm</title>
 	
 	<script type="text/javascript" src="moment.min.js"></script>
 	<script type="text/javascript" src="moment-timezone.min.js"></script>
 </head>
 <body>
 <script type="text/javascript">
-	var t = location.search.split('?').pop().split('&')[0]
-	//console.log(location.protocol+'//'+ location.host + '/reg?'+ t + '&' + moment.tz.guess())
-	location.href = location.protocol+'//'+ location.host + '/reg?'+ t + '&' + moment.tz.guess()
+	var register = function(){
+		var tz = moment.tz.guess()
+		if (confirm("Do you want to register your timezone ["+ tz +"] with TimeAlexa")){
+			var t = location.search.split('?').pop().split('&')[0]
+			//console.log(location.protocol+'//'+ location.host + '/reg?'+ t + '&' + moment.tz.guess())
+			location.href = location.protocol+'//'+ location.host + '/reg?'+ t + '&' + moment.tz.guess()
+		}
+	}
+	register();
 </script>
+Register or just close me.
+<button onclick="register()">Register</button>
 </body>
 </html>

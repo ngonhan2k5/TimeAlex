@@ -26,7 +26,7 @@ const timeAlex = {
       //   return send('Syntax:\r\n ```@TimeAlexa reg {timezone} [msg on|off]```\r\nEx:\r\n```@TimeAlexa UTC -7 msg on```'.replace(isDM?'@TimeAlexa ':'',''))
       return this._info(data).then(()=>{},(data)=>{
         regLink(data).then((token)=>{
-          send(`Or click to register: http:\/\/${LINK}/reg?${token.token}`, userID)
+          send(`Or click to register: http:\/\/${LINK}/?${token.token}`, userID)
           console.log(token)
         })
 
@@ -288,7 +288,7 @@ const timeAlex = {
           msg.push('\"**' + item.key + '**\" is **'+ utils.tzConvert(item, fromUserTz, _toTz) + ' in '+_toTz+' time**')
         }
 
-        send(data.user + ' '+  msg.join(' and '))
+        send("<@"+ data.userID + '> '+  msg.join(' and '))
 
       },
       // rejected: talking user not register a tz
