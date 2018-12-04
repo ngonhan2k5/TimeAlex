@@ -59,8 +59,8 @@ const timeAlex = {
     })
   },
   // process message to find time text
-  time : function (data, message, isReaction=false){
-    console.log(555555555,arguments)
+  time : function (data, message){
+    console.log(arguments)
     var items = res.process(message);
 
     if(items.length==0) return
@@ -77,19 +77,17 @@ const timeAlex = {
     console.log(121212, mentions, data.evt)
     // console.log(131313, items); return
 
-    utils.userTz(userID, isReaction).then(
+    utils.userTz(userID).then(
       function(tz){
         console.log(343434, userID, tz, mentions)
         var msg = []
         var fromUserTz = tz.tz
         // answer to channel
-        if(!isReaction){
-          for (const item of items) {
-            msg.push('\"**' + item.key + '**\" is **'+ utils.tzConvert(item, fromUserTz) + ' in UTC time**')
-          }
-
-          send(data.user + ' has talked about '+  msg.join(' and '))
+        for (const item of items) {
+          msg.push('\"**' + item.key + '**\" is **'+ utils.tzConvert(item, fromUserTz) + ' in UTC time**')
         }
+
+        send(data.user + ' has talked about '+  msg.join(' and '))
 
         // PM to mentioned users
         if (!mentions) return
@@ -100,14 +98,13 @@ const timeAlex = {
           utils.userTz(muser.id).then(
             function(tz){
 
-              // if (!tz.dmsg) return
+              if (!tz.dmsg) return
 
               var msg = [],
               toUserTz = tz.tz
 
               for (const item of items) {
-                if (item.tz||fromUserTz)
-                  msg.push('\"**' + item.key + '**\" is **'+ utils.tzConvert(item, item.tz||fromUserTz, toUserTz) + '** in your **'+toUserTz+'** time')
+                msg.push('\"**' + item.key + '**\" is **'+ utils.tzConvert(item, fromUserTz, toUserTz) + '** in your **'+toUserTz+'** time')
               }
               if (msg.length)
                 send('**'+data.user + '** has talked in <#' + channel_id + '> about:\r\n'+  msg.join(' and\r\n'), muser.id)
@@ -138,9 +135,6 @@ const timeAlex = {
       },
       // rejected: talking user not register a tz
       function(er){
-
-        if (isReaction) return 
-
         console.log(343434, userID, er)
         var msg = []
         // not answer to channel just remind user regist a tz
@@ -158,9 +152,7 @@ const timeAlex = {
 
         // No need PM to mentioned users
       }
-    ).catch(function (){},
-
-  )
+    ).catch(function (){})
   },
   find: function(data, kw, arg1, arg2){
     console.log(arguments)
@@ -287,7 +279,7 @@ const timeAlex = {
       return item
     })
 
-    var item = items.pop() 
+    var item = items.pop()
 
     if (item.tz){
       send("<@"+ data.userID + '> '+  '\"**' + item.key + '**\" is **'+ utils.tzConvert(item, item.tz, _toTz) + ' in '+_toTz+'('+ toTz + ') time**')
@@ -319,7 +311,74 @@ const timeAlex = {
         }
       ).catch(function (){})
     }
-  } // from
+  }, // from
+  timeReact : function (data, message){
+    console.log(555555555,arguments)
+    var items = res.process(message);
+
+    if(items.length==0) return
+    console.log(131313, items);
+
+    items = items.map(function(item){
+      if (item.abbr){
+        item.tz = utils.findTzName(item.abbr).shift()
+      }
+      return item
+    })
+
+    var {userID, user, send, reactor, channel_id } = data;
+    console.log(121212, reactor, data.evt)
+    // console.log(131313, items); return
+
+    utils.userTz(userID, true).then(
+      function(tz){
+        console.log(343434, userID, tz, reactor)
+        var msg = []
+        var fromUserTz = tz.tz
+        // PM to reacted user
+        console.log(reactor)
+        // check reacted user tz
+        utils.userTz(reactor.id).then(
+          function(tz){
+
+            var msg = [],
+            toUserTz = tz.tz
+
+            for (const item of items) {
+              if (item.tz||fromUserTz)
+                msg.push('\"**' + item.key + '**\" is **'+ utils.tzConvert(item, item.tz||fromUserTz, toUserTz) + '** in your **'+toUserTz+'** time')
+            }
+            if (msg.length)
+              send('**'+reactor.user + '** has talked in <#' + channel_id + '> about:\r\n'+  msg.join(' and\r\n'), reactor.id)
+          },
+          // rejected: remind reacted users about register a tz
+          function(er){
+            console.log('here',reactor.id)
+
+            // remind
+            var newData = Object.assign(data, {userID: reactor.id, user:reactor.user})
+            regLink(newData).then((token)=>{
+              send('Please register a timezone allow me translate the time for you:\r\n'+
+                  `http:\/\/${LINK}/?${token.token}`, reactor.id)
+            })
+
+          }
+        ).catch(function (){
+              //send(data.user + ' has talked about (<#514297100566265869>):\r\n'+  msg.join(' and\r\n'), muser.id)
+          })
+
+      })
+    },
+  mark:(data, message)=>{
+    // console.log('aaaaa', data)
+    // return
+    var {userID, user, send, isDM, bot, d:{channel_id:channelID, id:messageID}} = data;
+    var items = res.process(message)
+    if (items.length){
+      // console.log('aaaaa',d)
+      bot.addReaction({channelID: channelID, messageID: messageID, reaction: '🕰' })
+    }
+  }
 }
 
 var utils = {
@@ -373,10 +432,9 @@ var utils = {
       // },
       title: "Help for TimeAlexa",
       url: "https://discordbots.org/bot/509269359231893516",
-      description: "TimeAlexa will check people's text content and pick up text parts that **considerated a time** in: \r\n \
-      1. Your text: convert to UTC+0 and send right in channel\r\n \
-      2. Others text that mentioned you: convert to your Tz and Direct Messages to you\r\n \
-      (only with **Direct Message option** is on)",
+      description: "TimeAlexa will check people's text content and mark up messages have text parts that **considerated a time**\r\n \
+            **How to**:\r\n★　Chat messages contain time text will be react 🕰 \r\n \
+            ★　If you react with the same 🕰, a time translate would be PM to you",
       fields: [
         {
           name: "Register Setting",
@@ -423,8 +481,14 @@ var utils = {
       // },
       title: "Help for TimeAlexa",
       url: "https://discordbots.org/bot/509269359231893516",
-      description: "TimeAlexa translate time text in context like **2pm** **12:03 PM PST**,...",
+      description: "TimeAlexa help translate time text in context like **2pm** **12:03 PM PST**,...\r\n",
+
       fields: [
+        {
+          name: "0. How to",
+          value: "★　Chat messages contain time text will be react 🕰 \r\n"+
+                "★　If you react with the same 🕰, a time translate would be PM to you"
+        },
         {
           name: "1. Find a Timezone",
           value: "```@TimeAlexa find {keyword}```{keyword}: `PST`, `Los_Angeles` or just `los`"

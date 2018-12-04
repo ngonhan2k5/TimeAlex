@@ -9,7 +9,8 @@ var auth = require('../db/'+(isTest?'authtest':'auth')+'.json');
 
 var {route} = require('./route')
 
-const BOTID = isTest?'<@515540575504826368>':'<@509269359231893516>',
+const BOTID = isTest?'515540575504826368':'509269359231893516',
+      BOTTAG = '<@'+ BOTID +'>',
       BOTNAME = isTest?'@TimeAlexaT':'@TimeAlexa',
       OWNER = '228072055008919552'
 
@@ -62,7 +63,7 @@ bot.on('ready', function (evt) {
 
 bot.on("any", function(event) {
   if(event.t == 'MESSAGE_REACTION_ADD'){
-      if (event.d.emoji.name == '🕰'){
+      if (event.d.emoji.name == '🕰' && event.d.user_id != BOTID){
         console.log(event) //Logs every event
         var {message_id: messageID, user_id: reactUserID, channel_id:channelID} = event.d
 
@@ -72,11 +73,10 @@ bot.on("any", function(event) {
           if (reactUserID!=userID && message){
             var send = function (msg){
               return sender(bot, msg, reactUserID, true)
-            }
-            var cmd = 'time',
+            },
+            cmd = 'timeReact',
             args = [message, true],
-            data = {userID, user, send, isDM:true, bot, d:{mentions:[{id:reactUserID}], channel_id:channelID}}
-            console.log(454545,data)
+            data = {userID, user, send, bot, reactor:{id:reactUserID, user:bot.users[reactUserID].username}, channel_id:channelID}
 
             route(cmd, data, args)
           }
@@ -100,15 +100,15 @@ bot.on('message', function (user, userID, channelID, message, evt) {
         return sender(bot, msg, chID, isDM)
     }
 
-  var cmd = 'timeoff',
+  var cmd = 'mark',
       args = [message],
       data = {userID, user, send, isDM, bot, d:evt.d}
 
   //msg mention @TimeAlexa or Direct Message to bot,  DM chat have no guid_id
-  if (message.startsWith(BOTID) || isDM) {
+  if (message.startsWith(BOTTAG) || isDM) {
     args = message.split(' ');
     // if mention bot -> remove the mention from args
-    if (message.startsWith(BOTID)) args.shift()
+    if (message.startsWith(BOTTAG)) args.shift()
     // convert function
     if (args.join(' ').indexOf('>') > -1){
       cmd = 'from'
@@ -126,6 +126,6 @@ bot.on('message', function (user, userID, channelID, message, evt) {
   //   args = message.split('>').map((item)=> item.trim());
   // }
 
-  route(cmd, data, args) // || route('time', data, [message])
+  route(cmd, data, args) || route('mark', data, [message])
 
 });
