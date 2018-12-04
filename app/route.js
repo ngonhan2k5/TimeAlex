@@ -349,7 +349,7 @@ const timeAlex = {
                 msg.push('\"**' + item.key + '**\" is **'+ utils.tzConvert(item, item.tz||fromUserTz, toUserTz) + '** in your **'+toUserTz+'** time')
             }
             if (msg.length)
-              send('**'+reactor.user + '** has talked in <#' + channel_id + '> about:\r\n'+  msg.join(' and\r\n'), reactor.id)
+              send('**'+user + '** has talked in <#' + channel_id + '> about:\r\n'+  msg.join(' and\r\n'), reactor.id)
           },
           // rejected: remind reacted users about register a tz
           function(er){
