@@ -59,8 +59,8 @@ const timeAlex = {
     })
   },
   // process message to find time text
-  time : function (data, message){
-    console.log(arguments)
+  time : function (data, message, isReaction=false){
+    console.log(555555555,arguments)
     var items = res.process(message);
 
     if(items.length==0) return
@@ -77,17 +77,19 @@ const timeAlex = {
     console.log(121212, mentions, data.evt)
     // console.log(131313, items); return
 
-    utils.userTz(userID).then(
+    utils.userTz(userID, isReaction).then(
       function(tz){
         console.log(343434, userID, tz, mentions)
         var msg = []
         var fromUserTz = tz.tz
         // answer to channel
-        for (const item of items) {
-          msg.push('\"**' + item.key + '**\" is **'+ utils.tzConvert(item, fromUserTz) + ' in UTC time**')
-        }
+        if(!isReaction){
+          for (const item of items) {
+            msg.push('\"**' + item.key + '**\" is **'+ utils.tzConvert(item, fromUserTz) + ' in UTC time**')
+          }
 
-        send(data.user + ' has talked about '+  msg.join(' and '))
+          send(data.user + ' has talked about '+  msg.join(' and '))
+        }
 
         // PM to mentioned users
         if (!mentions) return
@@ -98,13 +100,14 @@ const timeAlex = {
           utils.userTz(muser.id).then(
             function(tz){
 
-              if (!tz.dmsg) return
+              // if (!tz.dmsg) return
 
               var msg = [],
               toUserTz = tz.tz
 
               for (const item of items) {
-                msg.push('\"**' + item.key + '**\" is **'+ utils.tzConvert(item, fromUserTz, toUserTz) + '** in your **'+toUserTz+'** time')
+                if (item.tz||fromUserTz)
+                  msg.push('\"**' + item.key + '**\" is **'+ utils.tzConvert(item, item.tz||fromUserTz, toUserTz) + '** in your **'+toUserTz+'** time')
               }
               if (msg.length)
                 send('**'+data.user + '** has talked in <#' + channel_id + '> about:\r\n'+  msg.join(' and\r\n'), muser.id)
@@ -135,6 +138,9 @@ const timeAlex = {
       },
       // rejected: talking user not register a tz
       function(er){
+
+        if (isReaction) return 
+
         console.log(343434, userID, er)
         var msg = []
         // not answer to channel just remind user regist a tz
@@ -262,7 +268,14 @@ const timeAlex = {
   },
   from: (data, message, toTz) => {
     var items = res.process(message);
+    var {userID, user, send, d:{mentions, channel_id} } = data;
+
     var _toTz = utils.findTzName(toTz, true).shift()
+
+    if (!_toTz){
+      send("<@"+ data.userID + '> target timezone not found')
+      return
+    }
 
     if(items.length==0) return
     console.log(131313, items);
@@ -274,48 +287,58 @@ const timeAlex = {
       return item
     })
 
-    var {userID, user, send, d:{mentions, channel_id} } = data;
-    console.log(121212, mentions, data.evt)
-    // console.log(131313, items); return
+    var item = items.pop() 
 
-    utils.userTz(userID).then(
-      function(tz){
-        console.log(343434, userID, tz, mentions)
-        var msg = []
-        var fromUserTz = tz.tz
-        // answer to channel
-        for (const item of items) {
-          msg.push('\"**' + item.key + '**\" is **'+ utils.tzConvert(item, fromUserTz, _toTz) + ' in '+_toTz+' time**')
+    if (item.tz){
+      send("<@"+ data.userID + '> '+  '\"**' + item.key + '**\" is **'+ utils.tzConvert(item, item.tz, _toTz) + ' in '+_toTz+'('+ toTz + ') time**')
+    }else{
+
+      utils.userTz(userID).then(
+        function(tz){
+          console.log(343434, userID, tz, mentions)
+          var msg = []
+          var fromUserTz = tz.tz
+          // answer to channel
+          for (const item of items) {
+            msg.push('\"**' + item.key + '**\" is **'+ utils.tzConvert(item, fromUserTz, _toTz) + ' in '+_toTz+'('+ toTz +') time**')
+          }
+
+          send("<@"+ data.userID + '> '+  msg.join(' and '))
+
+        },
+        // rejected: talking user not register a tz
+        function(er){
+
+          regLink(data).then((token)=>{
+            send('Please register a timezone to help translate your time correctly:\r\n'+
+              `http:\/\/${LINK}/?${token.token}`, userID)
+          })
+
+
+          // No need PM to mentioned users
         }
-
-        send("<@"+ data.userID + '> '+  msg.join(' and '))
-
-      },
-      // rejected: talking user not register a tz
-      function(er){
-
-        regLink(data).then((token)=>{
-          send('Please register a timezone to help translate your time correctly:\r\n'+
-            `http:\/\/${LINK}/?${token.token}`, userID)
-        })
-
-
-        // No need PM to mentioned users
-      }
-    ).catch(function (){})
-  }
+      ).catch(function (){})
+    }
+  } // from
 }
 
 var utils = {
   timeFormat : '',
-  userTz : function(userID){
+  userTz : function(userID, isReaction=false){
+
+    //if (isReaction)
+    //   return new Promise(function(resolve, reject) {resolve(userID)})
+
     return new Promise(function(resolve, reject) {
       var query = { _id: userID }
       db.findOne(query , function (err, doc) {   // Callback is optional
         console.log("Found: ", err, doc)
         if (err||!doc){
           console.log(2222222222,err)
-          reject(err)
+          if (!isReaction)
+            reject(err)
+          else
+            resolve({})
         }else{
           resolve(doc)
         }

@@ -62,8 +62,26 @@ bot.on('ready', function (evt) {
 
 bot.on("any", function(event) {
   if(event.t == 'MESSAGE_REACTION_ADD'){
-      if (event.d.emoji.name == '🕰')
+      if (event.d.emoji.name == '🕰'){
         console.log(event) //Logs every event
+        var {message_id: messageID, user_id: reactUserID, channel_id:channelID} = event.d
+
+        bot.getMessage({channelID:channelID, messageID:messageID}, (err, msgObj)=>{
+          console.log(err, msgObj)
+          var {content:message, author:{id:userID, username:user}, } = msgObj
+          if (reactUserID!=userID && message){
+            var send = function (msg){
+              return sender(bot, msg, reactUserID, true)
+            }
+            var cmd = 'time',
+            args = [message, true],
+            data = {userID, user, send, isDM:true, bot, d:{mentions:[{id:reactUserID}], channel_id:channelID}}
+            console.log(454545,data)
+
+            route(cmd, data, args)
+          }
+        })
+      }
   }
 
 });
@@ -82,7 +100,7 @@ bot.on('message', function (user, userID, channelID, message, evt) {
         return sender(bot, msg, chID, isDM)
     }
 
-  var cmd = 'time',
+  var cmd = 'timeoff',
       args = [message],
       data = {userID, user, send, isDM, bot, d:evt.d}
 
@@ -108,6 +126,6 @@ bot.on('message', function (user, userID, channelID, message, evt) {
   //   args = message.split('>').map((item)=> item.trim());
   // }
 
-  route(cmd, data, args) || route('time', data, [message])
+  route(cmd, data, args) // || route('time', data, [message])
 
 });
