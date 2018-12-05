@@ -361,26 +361,26 @@ const timeAlex = {
     },
   reaction:(data, flag)=>{
     var {userID, user, send, isDM, bot, d:{channel_id:channelID, id:messageID}} = data;
-    if (utils.isServerOwner(userID, channelID, bot)){
-      // show option
-      if(!flag){
-        utils.getChannelOption(channelID).then(
-          function(reaction){
-            send( 'TimeAlexa auto reaction is **'+ (reaction?'enabled':'disabled') + '** for this channel' )
-          }
-        )
+    // show option
+    if(!flag){
+      utils.getChannelOption(channelID).then(
+        function(reaction){
+          send( 'TimeAlexa auto reaction is **'+ (reaction?'enabled':'disabled') + '** for this channel' )
+        }
+      )
+    }else if (utils.isServerOwner(userID, channelID, bot)){
+
       // set option
-      }else{
-        var reaction = flag.toLowerCase()=='on'
-        utils.saveChannelOption({channelID:channelID, reaction:reaction}).then(
-          function(){
-              send( 'TimeAlexa auto reaction has **'+ (reaction?'enabled':'disabled') + '** for this channel' )
-          },
-          function(){
-            send( 'TimeAlexa auto reaction setting failed for this channel' )
-          }
-        )
-      }
+      var reaction = flag.toLowerCase()=='on'
+      utils.saveChannelOption({channelID:channelID, reaction:reaction}).then(
+        function(){
+            send( 'TimeAlexa auto reaction has **'+ (reaction?'enabled':'disabled') + '** for this channel' )
+        },
+        function(){
+          send( 'TimeAlexa auto reaction setting failed for this channel' )
+        }
+      )
+
     }else{
       send('Sorry, only server owner can use this command. Let\'s ask '+ bot.users[utils.serverOwner(channelID, bot)].username)
     }
