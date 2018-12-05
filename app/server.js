@@ -41,11 +41,11 @@ var start = function(send){
 
 	app.get('/thook', (req, res) => {
 
-		route.log('Hook called', req, send)
+		route.log('Hook called', {query:req.query, header:req.headers}, send)
+		// route.log('Hook called', req, send)
 		res.send(req.url.split('?').pop().split('&'))
 		//res.send(Object.keys(req.query).map(function(i){return i}))
 
-		//res.send()
 	})
 
 	app.listen(port, () => console.log(`Example app listening on port ${port}!`))

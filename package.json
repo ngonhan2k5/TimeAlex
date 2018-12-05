@@ -5,6 +5,7 @@
   "main": "bot.js",
   "author": "Ngonhan2k5",
   "dependencies": {
+    "circular-json": "^0.5.9",
     "cross-spawn": "^6.0.5",
     "discord.io": "https://github.com/woor/discord.io/tarball/gateway_v6",
     "express": "^4.16.4",
