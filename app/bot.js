@@ -7,7 +7,7 @@ var Discord = require('discord.io');
 var logger = require('winston');
 var auth = require('../db/'+(isTest?'authtest':'auth')+'.json');
 
-var {route} = require('./route')
+var {route, getChannelOption} = require('./route')
 
 const BOTID = isTest?'515540575504826368':'509269359231893516',
       BOTTAG = '<@'+ BOTID +'>',
@@ -15,7 +15,7 @@ const BOTID = isTest?'515540575504826368':'509269359231893516',
       OWNER = '228072055008919552'
 
 global.OWNER = OWNER
-
+global.BOTID = BOTID
 // Configure logger settings
 logger.remove(logger.transports.Console);
 logger.add(new logger.transports.Console, {
@@ -63,7 +63,11 @@ bot.on('ready', function (evt) {
 
 bot.on("any", function(event) {
   if(event.t == 'MESSAGE_REACTION_ADD'){
-      if (event.d.emoji.name == '🕰' && event.d.user_id != BOTID){
+      var channelID = event.d.channel_id,
+      allowReaction = ((bot.channels[channelID] &&
+                            bot.channels[channelID].permissions.user[global.BOTID] &&
+                            bot.channels[channelID].permissions.user[global.BOTID].allow) & 64) == 64,
+      doReact = function(){
         console.log(event) //Logs every event
         var {message_id: messageID, user_id: reactUserID, channel_id:channelID} = event.d
 
@@ -81,6 +85,22 @@ bot.on("any", function(event) {
             route(cmd, data, args)
           }
         })
+      }
+
+      if (event.d.emoji.name == '🕰' && event.d.user_id != BOTID){
+        if (allowReaction){
+          doReact()
+        }else{
+          getChannelOption(channelID).then(
+            function(reaction){
+              if (reaction) {
+                console.log('ddddddd')
+                doReact()
+              }
+            }
+          )
+        }
+
       }
   }
 

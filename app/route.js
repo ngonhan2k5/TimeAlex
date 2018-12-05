@@ -6,6 +6,7 @@ var cities = require ('../ref/countries.min.json')
 var Datastore = require('nedb')
 var db = new Datastore({ filename: 'db/usertz.db', autoload: true });
 const tokens = new Datastore({ filename: 'db/usertoken.db', autoload: true });
+const channels = new Datastore({ filename: 'db/channels.db', autoload: true });
 
 var res = require('./resolve')
 var moment = require('moment-timezone');
@@ -369,15 +370,60 @@ const timeAlex = {
 
       })
     },
+  reaction:(data, flag)=>{
+    var {userID, user, send, isDM, bot, d:{channel_id:channelID, id:messageID}} = data;
+    if (utils.isServerOwner(userID, channelID, bot)){
+      // show option
+      if(!flag){
+        utils.getChannelOption(channelID).then(
+          function(reaction){
+            send( 'TimeAlexa auto reaction is **'+ (reaction?'enabled':'disabled') + '** for this channel' )
+          }
+        )
+      // set option
+      }else{
+        var reaction = flag.toLowerCase()=='on'
+        utils.saveChannelOption({channelID:channelID, reaction:reaction}).then(
+          function(){
+              send( 'TimeAlexa auto reaction has **'+ (reaction?'enabled':'disabled') + '** for this channel' )
+          },
+          function(){
+            send( 'TimeAlexa auto reaction setting failed for this channel' )
+          }
+        )
+      }
+    }else{
+      send('Sorry, only server owner can use this command. Let\'s ask '+ bot.users[utils.serverOwner(channelID, bot)].username)
+    }
+  },
   mark:(data, message)=>{
     // console.log('aaaaa', data)
     // return
     var {userID, user, send, isDM, bot, d:{channel_id:channelID, id:messageID}} = data;
-    var items = res.process(message)
-    if (items.length){
-      // console.log('aaaaa',d)
-      bot.addReaction({channelID: channelID, messageID: messageID, reaction: '🕰' })
-    }
+    // Object.values(bot.servers).map((item)=>{
+    //   console.log(item)
+    // })
+
+    var allowReaction = ((bot.channels[channelID] &&
+                          bot.channels[channelID].permissions.user[global.BOTID] &&
+                          bot.channels[channelID].permissions.user[global.BOTID].allow) & 64) == 64
+    // var allowReaction2 = ((bot.channels[channelID] &&
+    //                                             bot.channels[channelID].permissions.user[global.BOTID] &&
+    //                                             bot.channels[channelID].permissions.user[global.BOTID].allow) & 64) == 64
+    console.log(allowReaction, bot.channels['514297100566265869'].permissions.user['515540575504826368'])
+    utils.getChannelOption(channelID).then(
+      function(reaction){
+        console.log(90909090, reaction)
+        if (reaction || allowReaction){
+          var items = res.process(message)
+          if (items.length){
+            // console.log('aaaaa',d)
+            bot.addReaction({channelID: channelID, messageID: messageID, reaction: '🕰' })
+          }
+        }
+      }
+    )
+
   }
 }
 
@@ -410,6 +456,19 @@ var utils = {
     let a = moment.tz(timeData.value, timeData.format, timeData.tz || fromTz)
     a.tz(toTz)
     return a.format(FORMAT)
+  },
+  isServerOwner:(userID, channelID, bot)=>{
+    return Object.values(bot.servers).find((srv)=>{
+      console.log(22222222,srv, userID, channelID)
+      return (srv.owner_id==userID && srv.channels[channelID])
+    }) != null
+  },
+  serverOwner:(channelID, bot)=>{
+    var srv = Object.values(bot.servers).find((srv)=>{
+      // console.log(22222222,srv, userID, channelID)
+      return (!!srv.channels[channelID])
+    })
+    return srv && srv.owner_id
   },
   sendHelpA: function(send){
     send('Your timezone will using to Translate the **considerated time content**: \r\n \
@@ -583,6 +642,46 @@ var utils = {
       }
 
     });
+  },
+  getChannelOption: function(channelID){
+    return new Promise((resolve, reject)=>{
+      channels.findOne({ _id: channelID}, (err,doc)=>{
+        if (doc)
+          resolve(doc.reaction)
+        else {
+          resolve(false)
+        }
+      })
+    })
+  },
+  saveChannelOption : function (data){
+    // console.log(send('111111'), 11111111)
+    var {channelID, reaction} = data
+
+    var newData = { _id: channelID, reaction: reaction}
+
+    return new Promise((resolve, reject)=>{
+      channels.insert(newData, function (err, newDoc) {   // Callback is optional
+        console.log("Reg error", err, err && err.errorType)
+        if (!err)
+          resolve(1)
+        else if (err.errorType == 'uniqueViolated'){
+          channels.update({ _id: channelID }, { $set: newData}, {}, function (err, numReplaced) {
+            console.log("Update error", err, numReplaced)
+            if (!err && numReplaced){
+              resolve(1)
+            }else {
+              reject(0)
+            }
+          });
+        }else{
+          reject(0)
+        }
+
+
+
+      });
+    })
   }
 
 }
@@ -650,7 +749,8 @@ module.exports = {
   route:route,
   registerTz: registerTz,
   sender: sender,
-  log:log
+  log:log,
+  getChannelOption: utils.getChannelOption
 }
 
 // https://discordbots.org/bot/509269359231893516
