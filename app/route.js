@@ -118,7 +118,6 @@ const timeAlex = {
                 msg.push('\"**' + item.key + '**\" is **'+ utils.tzConvert(item, fromUserTz) + '** in **UTC** time')
               }
               if (msg.length){
-                console.log(8888888888, muser.id)
                 // remind
                 var newData = Object.assign(data, {userID: muser.id, user:muser.username})
                 regLink(newData).then((token)=>{
@@ -136,7 +135,6 @@ const timeAlex = {
       },
       // rejected: talking user not register a tz
       function(er){
-        console.log(343434, userID, er)
         var msg = []
         // not answer to channel just remind user regist a tz
         for (const item of items) {
@@ -204,7 +202,6 @@ const timeAlex = {
 
         send('<@'+userID+'>: Now is **'+moment.tz(arg1).format(FORMAT)+ '** in **'+ arg1 +'** timezone')
       }else{
-        console.log(3333333333,'here', arg1)
         var result = utils.findTzName(arg1, true, arg2).shift()
         if (result)
           send('<@'+userID+'>: Now is **'+moment.tz(result).format(FORMAT)+ '** in **'+ result +'** timezone')
@@ -224,7 +221,6 @@ const timeAlex = {
     }
   },
   _run: function(data){
-    // console.log(222222,arguments)
     var args = [...arguments].slice(1)
     var {send, userID, isDM, bot} = data;
 
@@ -232,7 +228,7 @@ const timeAlex = {
     var cmd = args.shift()
 
     args = args.map(function(item){return item.replace(/_/g,' ')})
-    // const { spawn } = require('child_process');
+
     const spawn = require('cross-spawn');
     const child = spawn(cmd, args);
 
@@ -271,7 +267,6 @@ const timeAlex = {
     }
 
     if(items.length==0) return
-    console.log(131313, items);
 
     items = items.map(function(item){
       if (item.abbr){
@@ -288,7 +283,6 @@ const timeAlex = {
 
       utils.userTz(userID).then(
         function(tz){
-          console.log(343434, userID, tz, mentions)
           var msg = []
           var fromUserTz = tz.tz
           // answer to channel
@@ -314,11 +308,9 @@ const timeAlex = {
     }
   }, // from
   timeReact : function (data, message){
-    console.log(555555555,arguments)
     var items = res.process(message);
 
     if(items.length==0) return
-    console.log(131313, items);
 
     items = items.map(function(item){
       if (item.abbr){
@@ -328,12 +320,9 @@ const timeAlex = {
     })
 
     var {userID, user, send, reactor, channel_id } = data;
-    console.log(121212, reactor, data.evt)
-    // console.log(131313, items); return
 
     utils.userTz(userID, true).then(
       function(tz){
-        console.log(343434, userID, tz, reactor)
         var msg = []
         var fromUserTz = tz.tz
         // PM to reacted user
@@ -439,7 +428,6 @@ var utils = {
       db.findOne(query , function (err, doc) {   // Callback is optional
         console.log("Found: ", err, doc)
         if (err||!doc){
-          console.log(2222222222,err)
           if (!isReaction)
             reject(err)
           else
@@ -452,7 +440,6 @@ var utils = {
     //return doc.tz
   },
   tzConvert : function(timeData, fromTz, toTz='UTC'){
-    console.log(44444444, arguments)
     let a = moment.tz(timeData.value, timeData.format, timeData.tz || fromTz)
     a.tz(toTz)
     return a.format(FORMAT)
@@ -569,7 +556,6 @@ var utils = {
     })
   },
   findTzName: function (kw, searchCity=false, country){
-    console.log(555555, arguments)
     var result = []
     if (kw.toUpperCase()!=kw){
       // find in moment zone
@@ -597,7 +583,6 @@ var utils = {
       })
       // abbreviation need exact match
       result = abbrList.filter(function(item){return item[1].toUpperCase().indexOf(kw.toUpperCase()) > -1}).map(function(i){return i[0]})
-      console.log(4444444, result)
 
     }
 
@@ -616,7 +601,6 @@ var utils = {
     return Math.random().toString(36).substr(2); // remove `0.`
   },
   registerTz : function (data, send){
-    // console.log(send('111111'), 11111111)
     var {user, userID, tz, isDM, pmKey} = data
 
     var newData = { _id: userID, tz: tz},
@@ -724,7 +708,6 @@ const registerTz = function(query, send){
       var tz= query.tz || 'UTC'
       tokens.findOne({token: query.token}, (err,doc)=>{
         if (doc){
-          console.log(66666666, doc)
           utils.registerTz({userID: doc.userID, user: doc.user, tz, idDM: true}, send(doc.userID))
 
           tokens.remove({userID: doc.userID}, { multi: true }, ()=>{
@@ -738,9 +721,14 @@ const registerTz = function(query, send){
   )
 }
 
+const JSON = require('circular-json');
+
+var util = require('util')
+
 const log = function(name, query, send){
-  // console.log(88888,send)
-  send(global.OWNER)('['+name+'] '+JSON.stringify(query))
+  send(global.OWNER)('['+name+'] '+JSON.stringify(query, null, '\t').substr(0,2000))
+  // send(global.OWNER)('['+name+'] ' + util.inspect(query).substr(0,1000))
+  
 }
 
 

@@ -63,16 +63,21 @@ bot.on('ready', function (evt) {
 
 bot.on("any", function(event) {
   if(event.t == 'MESSAGE_REACTION_ADD'){
+<<<<<<< HEAD
       var channelID = event.d.channel_id,
       allowReaction = ((bot.channels[channelID] &&
                             bot.channels[channelID].permissions.user[global.BOTID] &&
                             bot.channels[channelID].permissions.user[global.BOTID].allow) & 64) == 64,
       doReact = function(){
         console.log(event) //Logs every event
+=======
+      if (event.d.emoji.name == '🕰' && event.d.user_id != BOTID){
+        // console.log(event) //Logs every event
+>>>>>>> 15865f4a758d2dae76e9fd8de068148ba3c43eff
         var {message_id: messageID, user_id: reactUserID, channel_id:channelID} = event.d
 
         bot.getMessage({channelID:channelID, messageID:messageID}, (err, msgObj)=>{
-          console.log(err, msgObj)
+          // console.log(err, msgObj)
           var {content:message, author:{id:userID, username:user}, } = msgObj
           if (reactUserID!=userID && message){
             var send = function (msg){
