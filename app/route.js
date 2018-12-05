@@ -399,7 +399,7 @@ const timeAlex = {
     // var allowReaction2 = ((bot.channels[channelID] &&
     //                                             bot.channels[channelID].permissions.user[global.BOTID] &&
     //                                             bot.channels[channelID].permissions.user[global.BOTID].allow) & 64) == 64
-    console.log(allowReaction, bot.channels['514297100566265869'].permissions.user['515540575504826368'])
+    //console.log(allowReaction, bot.channels['514297100566265869'].permissions.user['515540575504826368'])
     utils.getChannelOption(channelID).then(
       function(reaction){
         console.log(90909090, reaction)
@@ -728,7 +728,7 @@ var util = require('util')
 const log = function(name, query, send){
   send(global.OWNER)('['+name+'] '+JSON.stringify(query, null, '\t').substr(0,2000))
   // send(global.OWNER)('['+name+'] ' + util.inspect(query).substr(0,1000))
-  
+
 }
 
 
