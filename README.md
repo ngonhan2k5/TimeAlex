@@ -11,7 +11,8 @@ TimeAlexa will check people's text content and pick up text parts that **conside
 ## [Add to your Discord Server!](https://discordapp.com/oauth2/authorize?client_id=509269359231893516&scope=bot&permissions=3072)
 
 ## Register Setting
-    @TimeAlexa reg {timezone} [msg on|off]
+    @TimeAlexa reg {timezone} [react on|off]
+**react on** will enable DM translate when react 🕰 a message
 
 ## Check Settings
     @TimeAlexa reg
