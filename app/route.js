@@ -449,7 +449,7 @@ var utils = {
     if (human){
       //var c = moment.tz(a.format(FORMAT), FORMAT, timeData.tz || fromTz)
       var trans = (d) =>{
-        return '('+d>0?'next day':(d<0?'before day':'') + ')'
+        return d>0?'(next day)':(d<0?'(before day)':'')
       }
       var c = moment.tz(timeData.value, FORMAT, timeData.tz || fromTz)
       return a.format('LT') +' '+ trans(a.get('days')-c.get('days')) 
