@@ -382,7 +382,7 @@ const timeAlex = {
       )
 
     }else{
-      send('Sorry, only server owner can use this command. Let\'s ask '+ bot.users[utils.serverOwner(channelID, bot)].username)
+      send('Sorry, only server owner can use this command. Let\'s ask '+ bot.users[utils.serverOwner(channelID, bot)||global.OWNER].username)
     }
   },
   mark:(data, message)=>{
@@ -483,6 +483,16 @@ var utils = {
             ★　If you react with the same 🕰, a time translate would be PM to you",
       fields: [
         {
+          name: "Auto mark/reaction",
+          value: "Auto reaction will be disable by default, only server owner can enable/disable it\r\n"+
+          "Enable:\r\n"+
+          "Method 1: Explicit allow reaction pemission for TimeAlexa in channel\r\n"+
+          "Method 2: ```@TimeAleza reaction on```"+
+          "Disable:\r\n"+
+          "★　Remove the Explicit allow reaction for TimeAlexa in channel if be turned on before\r\n"+
+          "★　And ```@TimeAleza reaction off``` if has turn on befored"
+        },
+        {
           name: "Register Setting",
           value: "```@TimeAlexa reg {timezone} [msg on|off]```"
         },
@@ -534,6 +544,16 @@ var utils = {
           name: "0. How to",
           value: "★　Chat messages contain time text will be react 🕰 \r\n"+
                 "★　If you react with the same 🕰, a time translate would be PM to you"
+        },
+        {
+          name: "Auto mark/reaction",
+          value: "Auto reaction will be disable by default, only server owner can enable/disable it\r\n"+
+          "Enable:\r\n"+
+          "Method 1: Explicit allow reaction pemission for TimeAlexa in channel\r\n"+
+          "Method 2: ```@TimeAleza reaction on```"+
+          "Disable:\r\n"+
+          "★　Remove the Explicit allow reaction for TimeAlexa in channel if be turned on before\r\n"+
+          "★　And ```@TimeAleza reaction off``` if has turn on befored"
         },
         {
           name: "1. Find a Timezone",

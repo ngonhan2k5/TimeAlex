@@ -1,9 +1,9 @@
 var moment = require('moment');
 // console.log(moment().format());
 var dic = [
-  {reg:/(?:\s)*([1-2]?\d:[0-6]?\d)\s*(EST|PST|DST|EET)(?:\s)*/ig, format:'HH:mm', res:'_24h'}, //12-11am,12-11pm
-  {reg:/(?:\s)*(1?\d:[0-6]?\d)\s*(am|pm)(?:\s)*(EST|PST|DST|EET)?(?:\s)*/ig, format:'hh:mm a', res:'ampm'}, //12-11am,12-11pm
-  {reg:/(?:\s)*(1?\d)\s*(am|pm)(?:\s)*(EST|PST|DST|EET)?(?:\s)*/ig, format:'hh a', res:'ampm'}, //12-11am,12-11pm
+  {reg:/(?:\s)*([1-2]?\d:[0-6]?\d)\s*(CST|EST|PST|DST|EET)(?:\s)*/ig, format:'HH:mm', res:'_24h'}, //12-11am,12-11pm
+  {reg:/(?:\s)*(1?\d:[0-6]?\d)\s*(am|pm)(?:\s)*(CST|EST|PST|DST|EET)?(?:\s)*/ig, format:'hh:mm a', res:'ampm'}, //12-11am,12-11pm
+  {reg:/(?:\s)*(1?\d)\s*(am|pm)(?:\s)*(CST|EST|PST|DST|EET)?(?:\s)*/ig, format:'hh a', res:'ampm'}, //12-11am,12-11pm
 ],
 resolve = {
   ampm: function (match, format){
