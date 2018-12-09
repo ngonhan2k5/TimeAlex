@@ -37,7 +37,7 @@ const timeAlex = {
       return send('Timezone name wrong\r\n To find right timezone name, use ```@TimeAlexa find abc```\r\nEx:\r\n```@TimeAlexa find los```')
     }
 
-    utils.registerTz({userID, user, tz, isDM},  send)
+    utils.registerTz({userID, user, tz, isDM, pmKey, pm},  send)
 
   }, // end reg
   _info : function (data){
@@ -50,7 +50,7 @@ const timeAlex = {
         console.log("Found: ", docs)
         if (!err && docs && docs.length > 0){
           var {tz, dmsg} = docs.pop()
-          send((isDM?'You':user) + ' has **'+ tz + '** timezone and **Direct Message ' + (dmsg?'opt-in':'opt-out')+ "** with me");
+          send((isDM?'You':user) + ' has **'+ tz + '** timezone and **React Translate ' + (dmsg?'opt-in':'opt-out')+ "** with me");
           resolve(true)
         }else{
           send('Your setting not found. Please register your setting with:```@TimeAlexa reg {timezone} [msg on|off]```\r\nExample: find your tz then use it to register```@TimeAlexa find york //should return America/New_York\r\n@TimeAlexa reg America/New_York msg on``` ')
@@ -364,8 +364,11 @@ const timeAlex = {
     // show option
     if(!flag){
       utils.getChannelOption(channelID).then(
-        function(reaction){
+        (reaction)=>{
           send( 'TimeAlexa auto reaction is **'+ (reaction?'enabled':'disabled') + '** for this channel' )
+        },
+        ()=>{
+          send( 'TimeAlexa auto reaction is not **'+ 'enabled' + '** for this channel' )
         }
       )
     }else if (utils.isServerOwner(userID, channelID, bot)){
@@ -374,7 +377,7 @@ const timeAlex = {
       var reaction = flag.toLowerCase()=='on'
       utils.saveChannelOption({channelID:channelID, reaction:reaction}).then(
         function(){
-            send( 'TimeAlexa auto reaction has **'+ (reaction?'enabled':'disabled') + '** for this channel' )
+          send( 'TimeAlexa auto reaction has **'+ (reaction?'enabled':'disabled') + '** for this channel' )
         },
         function(){
           send( 'TimeAlexa auto reaction setting failed for this channel' )
@@ -400,17 +403,18 @@ const timeAlex = {
     //                                             bot.channels[channelID].permissions.user[global.BOTID] &&
     //                                             bot.channels[channelID].permissions.user[global.BOTID].allow) & 64) == 64
     //console.log(allowReaction, bot.channels['514297100566265869'].permissions.user['515540575504826368'])
-    utils.getChannelOption(channelID).then(
+    utils.getChannelOption(channelID, allowReaction).then(
       function(reaction){
-        console.log(90909090, reaction)
-        if (reaction || allowReaction){
+        // console.log(90909090, reaction)
+        if (reaction){
           var items = res.process(message)
           if (items.length){
             // console.log('aaaaa',d)
             bot.addReaction({channelID: channelID, messageID: messageID, reaction: '🕰' })
           }
         }
-      }
+      },
+      function(err){}
     )
 
   }
@@ -439,9 +443,17 @@ var utils = {
     })
     //return doc.tz
   },
-  tzConvert : function(timeData, fromTz, toTz='UTC'){
+  tzConvert : function(timeData, fromTz, toTz='UTC', human=true){
     let a = moment.tz(timeData.value, timeData.format, timeData.tz || fromTz)
     a.tz(toTz)
+    if (human){
+      //var c = moment.tz(a.format(FORMAT), FORMAT, timeData.tz || fromTz)
+      var trans = (d) =>{
+        return d>0?'(next day)':(d<0?'(before day)':'')
+      }
+      var c = moment.tz(timeData.value, FORMAT, timeData.tz || fromTz)
+      return a.format('LT') +' '+ trans(a.get('days')-c.get('days')) 
+    }
     return a.format(FORMAT)
   },
   isServerOwner:(userID, channelID, bot)=>{
@@ -480,7 +492,7 @@ var utils = {
       url: "https://discordbots.org/bot/509269359231893516",
       description: "TimeAlexa will check people's text content and mark up messages have text parts that **considerated a time**\r\n \
             **How to**:\r\n★　Chat messages contain time text will be react 🕰 \r\n \
-            ★　If you react with the same 🕰, a time translate would be PM to you",
+            ★　If you react with the 🕰, a time translate would be PM to you",
       fields: [
         {
           name: "Auto mark/reaction",
@@ -494,7 +506,7 @@ var utils = {
         },
         {
           name: "Register Setting",
-          value: "```@TimeAlexa reg {timezone} [msg on|off]```"
+          value: "```@TimeAlexa reg {timezone} [react on|off]```\r\n**react on** will enable DM translate when react 🕰 a message"
         },
         {
           name: "Check Settings",
@@ -543,7 +555,7 @@ var utils = {
         {
           name: "0. How to",
           value: "★　Chat messages contain time text will be react 🕰 \r\n"+
-                "★　If you react with the same 🕰, a time translate would be PM to you"
+                "★　If you react with the 🕰, a time translate would be PM to you"
         },
         {
           name: "Auto mark/reaction",
@@ -560,8 +572,8 @@ var utils = {
           value: "```@TimeAlexa find {keyword}```{keyword}: `PST`, `Los_Angeles` or just `los`"
         },
         {
-          name: "2. Set your Timezone",
-          value: "```@TimeAlexa reg {timezone} [msg on|off]```"
+          name: "2. Set your Timezone and react DM translate",
+          value: "```@TimeAlexa reg {timezone} [react on|off]```**react on** will enable DM react translate when 🕰 a message"
         },
         {
           name: "\r\n* More detail ?",
@@ -621,22 +633,22 @@ var utils = {
     return Math.random().toString(36).substr(2); // remove `0.`
   },
   registerTz : function (data, send){
-    var {user, userID, tz, isDM, pmKey} = data
+    var {user, userID, tz, isDM, pmKey, pm} = data
 
     var newData = { _id: userID, tz: tz},
-    dmsg = (pmKey=='msg' && (pm=='on' || pm==null) )
+    dmsg = (pmKey=='react' && (pm=='on' || pm==null) )
 
-    if (pmKey=='msg') newData.dmsg = dmsg
+    if (pmKey=='react') newData.dmsg = dmsg
 
     db.insert(newData, function (err, newDoc) {   // Callback is optional
       console.log("Reg error", err, err && err.errorType)
       if (!err)
-      send( (isDM?'You': user) + ' has registered timezone **'+ tz + '** and **Direct Message ' + (dmsg?'enabled':'disabled')+ '**');
+      send( (isDM?'You': user) + ' has registered timezone **'+ tz + '** and **React Translate ' + (dmsg?'enabled':'disabled')+ '**');
       else if (err.errorType == 'uniqueViolated'){
         db.update({ _id: userID }, { $set: newData}, {}, function (err, numReplaced) {
           console.log("Update error", err, numReplaced)
           if (!err && numReplaced)
-            send( (isDM?'You': user) + ' has changed timezone to **'+ tz + '**' + (pmKey=='msg'?(' and **Direct Message ' + (dmsg?'enabled':'disabled')+'**'):'') );
+            send( (isDM?'You': user) + ' has changed timezone to **'+ tz + '**' + (pmKey=='react'?(' and **React Translate ' + (dmsg?'enabled':'disabled')+'**'):'') );
           else if (err){
             send('Timezone change failed')
           }
@@ -647,15 +659,19 @@ var utils = {
 
     });
   },
-  getChannelOption: function(channelID){
+  getChannelOption: function(channelID, bypass){
     return new Promise((resolve, reject)=>{
-      channels.findOne({ _id: channelID}, (err,doc)=>{
-        if (doc)
-          resolve(doc.reaction)
-        else {
-          resolve(false)
-        }
-      })
+      if (!bypass){
+        channels.findOne({ _id: channelID}, (err,doc)=>{
+          if (doc)
+            resolve(doc.reaction)
+          else {
+            reject(false)
+          }
+        })
+      }else{
+        resolve(true)
+      }
     })
   },
   saveChannelOption : function (data){
@@ -681,8 +697,6 @@ var utils = {
         }else{
           reject(0)
         }
-
-
 
       });
     })
@@ -758,7 +772,8 @@ module.exports = {
   registerTz: registerTz,
   sender: sender,
   log:log,
-  getChannelOption: utils.getChannelOption
+  getChannelOption: utils.getChannelOption,
+  userTz: utils.userTz
 }
 
 // https://discordbots.org/bot/509269359231893516

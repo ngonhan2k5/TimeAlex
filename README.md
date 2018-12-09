@@ -3,15 +3,17 @@
 # TimeAlex
 A Discord Bot help translate mentioned time for user across timezone
 
-TimeAlexa will check people's text content and pick up text parts that **considerated a time** in:
-  1. Your text: convert to UTC+0 and send right in channel
-  2. Others text that mentioned you: convert to your Tz and Direct Messages to you  
- (only with **Direct Message option** is on)
+TimeAlexa will check people's text content and mark up messages have text parts that **considerated a time**
+
+**How to**:
+ * Chat messages contain time text will be react 🕰 
+ * If you react with the 🕰, a time translate would be PM to you (only with **React Message option** is on)
 
 ## [Add to your Discord Server!](https://discordapp.com/oauth2/authorize?client_id=509269359231893516&scope=bot&permissions=3072)
 
 ## Register Setting
-    @TimeAlexa reg {timezone} [msg on|off]
+    @TimeAlexa reg {timezone} [react on|off]
+**react on** will enable DM translate when react 🕰 a message
 
 ## Check Settings
     @TimeAlexa reg
@@ -37,3 +39,7 @@ TimeAlexa will check people's text content and pick up text parts that **conside
 *   Short hour: `2 am` `5pm`  
 *   With minutes: `2:30am` `12:03 pm`
 *   With abbr: `2:30am EST` `12:03 pm PST`
+
+## Convert Time (in PM)
+* From abbr to abbr: `2pm EST > PST` `11:00 AM PST > EST`
+* from your registered tz: `2pm > PST`

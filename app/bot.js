@@ -7,7 +7,7 @@ var Discord = require('discord.io');
 var logger = require('winston');
 var auth = require('../db/'+(isTest?'authtest':'auth')+'.json');
 
-var {route, getChannelOption} = require('./route')
+var {route, getChannelOption, userTz} = require('./route')
 
 const BOTID = isTest?'515540575504826368':'509269359231893516',
       BOTTAG = '<@'+ BOTID +'>',
@@ -66,41 +66,38 @@ bot.on("any", function(event) {
       var channelID = event.d.channel_id,
       allowReaction = ((bot.channels[channelID] &&
                             bot.channels[channelID].permissions.user[global.BOTID] &&
-                            bot.channels[channelID].permissions.user[global.BOTID].allow) & 64) == 64,
-      doReact = function(){
-        console.log(event) //Logs every event
-        var {message_id: messageID, user_id: reactUserID, channel_id:channelID} = event.d
-
-        bot.getMessage({channelID:channelID, messageID:messageID}, (err, msgObj)=>{
-          // console.log(err, msgObj)
-          var {content:message, author:{id:userID, username:user}, } = msgObj
-          if (reactUserID!=userID && message){
-            var send = function (msg){
-              return sender(bot, msg, reactUserID, true)
-            },
-            cmd = 'timeReact',
-            args = [message, true],
-            data = {userID, user, send, bot, reactor:{id:reactUserID, user:bot.users[reactUserID].username}, channel_id:channelID}
-
-            route(cmd, data, args)
-          }
-        })
-      }
+                            bot.channels[channelID].permissions.user[global.BOTID].allow) & 64) == 64
 
       if (event.d.emoji.name == '🕰' && event.d.user_id != BOTID){
-        if (allowReaction){
-          doReact()
-        }else{
-          getChannelOption(channelID).then(
-            function(reaction){
-              if (reaction) {
-                console.log('ddddddd')
-                doReact()
-              }
-            }
-          )
-        }
+        //getChannelOption(channelID, allowReaction).then(
+        userTz(event.d.user_id).then(
 
+          (reaction)=>{
+            if (reaction.dmsg) {
+              console.log(event) //Logs every event
+              var {message_id: messageID, user_id: reactUserID, channel_id:channelID} = event.d
+
+              bot.getMessage({channelID:channelID, messageID:messageID}, (err, msgObj)=>{
+                // console.log(err, msgObj)
+                var {content:message, author:{id:userID, username:user}, } = msgObj
+                if (reactUserID!=userID && message){
+                  var send = function (msg){
+                    return sender(bot, msg, reactUserID, true)
+                  },
+                  cmd = 'timeReact',
+                  args = [message, true],
+                  data = {userID, user, send, bot, reactor:{id:reactUserID, user:bot.users[reactUserID].username}, channel_id:channelID}
+
+                  route(cmd, data, args)
+                }
+              })
+            }else{
+              console.log('Reaction Direct Message disabled')
+            }
+          },
+          ()=>{}
+
+        )
       }
   }
 
