@@ -62,18 +62,18 @@ module.exports = {
     dic.map(function(item){
       //console.log(dic[key]);
       var {reg, res, format} = item
-      console.log(77777777,item)
+      // console.log(77777777,item)
       do {
         m = reg.exec(s);
         if (m) {
-          console.log(m[1], 222, m[2]);
+          // console.log(m[1], 222, m[2]);
           ret.push({key:m[0], ... resolve[res] && resolve[res](m, format)})
         }
       } while (m);
 
       s = s.replace(reg, ' ')
 
-      console.log(1111,s)
+      // console.log(1111,s)
     })
     return ret;
   }
