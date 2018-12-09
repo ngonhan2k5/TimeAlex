@@ -74,7 +74,7 @@ bot.on("any", function(event) {
 
           (reaction)=>{
             if (reaction.dmsg) {
-              console.log(event) //Logs every event
+              // console.log(event) //Logs every event
               var {message_id: messageID, user_id: reactUserID, channel_id:channelID} = event.d
 
               bot.getMessage({channelID:channelID, messageID:messageID}, (err, msgObj)=>{

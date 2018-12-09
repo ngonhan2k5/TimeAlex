@@ -42,12 +42,12 @@ const timeAlex = {
   }, // end reg
   _info : function (data){
     var {userID, user, send, isDM} = data;
-    console.log('Info', arguments)
+    // console.log('Info', arguments)
 
     var query = { _id: userID}
     return new Promise((resolve, reject) => {
       db.find(query, function (err, docs) {   // Callback is optional
-        console.log("Found: ", docs)
+        // console.log("Found: ", docs)
         if (!err && docs && docs.length > 0){
           var {tz, dmsg} = docs.pop()
           send((isDM?'You':user) + ' has **'+ tz + '** timezone and **React Translate ' + (dmsg?'opt-in':'opt-out')+ "** with me");
@@ -61,11 +61,11 @@ const timeAlex = {
   },
   // process message to find time text
   time : function (data, message){
-    console.log(arguments)
+    // console.log(arguments)
     var items = res.process(message);
 
     if(items.length==0) return
-    console.log(131313, items);
+    // console.log(131313, items);
 
     items = items.map(function(item){
       if (item.abbr){
@@ -75,12 +75,12 @@ const timeAlex = {
     })
 
     var {userID, user, send, d:{mentions, channel_id} } = data;
-    console.log(121212, mentions, data.evt)
+    // console.log(121212, mentions, data.evt)
     // console.log(131313, items); return
 
     utils.userTz(userID).then(
       function(tz){
-        console.log(343434, userID, tz, mentions)
+        // console.log(343434, userID, tz, mentions)
         var msg = []
         var fromUserTz = tz.tz
         // answer to channel
@@ -94,7 +94,7 @@ const timeAlex = {
         if (!mentions) return
 
         for (const muser of mentions) {
-          console.log(muser)
+          // console.log(muser)
           // check mentioned user setting option dmsg
           utils.userTz(muser.id).then(
             function(tz){
@@ -112,7 +112,7 @@ const timeAlex = {
             },
             // rejected: remind mentioned users about register a tz
             function(er){
-              console.log('here')
+              // console.log('here')
               var msg = []
               for (const item of items) {
                 msg.push('\"**' + item.key + '**\" is **'+ utils.tzConvert(item, fromUserTz) + '** in **UTC** time')
@@ -154,7 +154,7 @@ const timeAlex = {
     ).catch(function (){})
   },
   find: function(data, kw, arg1, arg2){
-    console.log(arguments)
+    // console.log(arguments)
 
     if (!kw) return
     var page = isNaN(arg1)?(isNaN(arg2)?1:Number.parseInt(arg2)):Number.parseInt(arg1)
@@ -191,7 +191,7 @@ const timeAlex = {
       if (toTzUid && !isNaN(toTzUid[1])){ // now of mentioned user
         utils.userTz(toTzUid[1]).then(
           function(tz){
-            console.log(toTzUid[1], bot.users[toTzUid[1]].username)
+            // console.log(toTzUid[1], bot.users[toTzUid[1]].username)
             send('<@'+userID+'>: Now is **'+moment.tz(tz&&tz.tz).format(FORMAT)+ '** at **@'+ bot.users[toTzUid[1]].username +'** place')
           },
           function(er){
@@ -326,7 +326,7 @@ const timeAlex = {
         var msg = []
         var fromUserTz = tz.tz
         // PM to reacted user
-        console.log(reactor)
+        // console.log(reactor)
         // check reacted user tz
         utils.userTz(reactor.id).then(
           function(tz){
@@ -343,7 +343,7 @@ const timeAlex = {
           },
           // rejected: remind reacted users about register a tz
           function(er){
-            console.log('here',reactor.id)
+            // console.log('here',reactor.id)
 
             // remind
             var newData = Object.assign(data, {userID: reactor.id, user:reactor.user})
@@ -452,7 +452,7 @@ var utils = {
         return d>0?'(next day)':(d<0?'(before day)':'')
       }
       var c = moment.tz(timeData.value, FORMAT, timeData.tz || fromTz)
-      return a.format('LT') +' '+ trans(a.get('days')-c.get('days')) 
+      return a.format('LT') +' '+ trans(a.get('days')-c.get('days'))
     }
     return a.format(FORMAT)
   },
